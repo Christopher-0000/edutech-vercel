@@ -8,19 +8,24 @@ import storageService from '../services/storageService';
 export default function Signup() {
   const navigate = useNavigate();
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
-  const [focusedField, setFocusedField] = useState(null);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [signupError, setSignupError] = useState('');
 
-  const onSubmit = (data) => {
-    // Store signup data in storageService
-    storageService.set('isLoggedIn', 'true');
-    storageService.set('userName', data.fullName);
-    storageService.set('userEmail', data.email);
-    storageService.set('userMobile', data.mobileNumber);
-    storageService.set('userRole', 'student');
-    
-    setSubmitSuccess(true);
-    setTimeout(() => navigate('/'), 1500);
+  const onSubmit = async (data) => {
+    setSignupError('');
+    try {
+      await authService.register({
+        name: data.fullName,
+        email: data.email,
+        password: data.password,
+        mobile: data.mobileNumber
+      });
+      
+      setSubmitSuccess(true);
+      setTimeout(() => navigate('/'), 1500);
+    } catch (error) {
+      console.error('Signup error:', error);
+      setSignupError(error.message || 'Failed to create account. Please try again.');
+    }
   };
 
   const password = watch('password');

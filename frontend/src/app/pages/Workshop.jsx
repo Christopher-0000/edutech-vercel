@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
 import svgPaths from '../../imports/svg-go1x4xx39u';
+import eventService from '../services/eventService';
+import { useEffect } from 'react';
 
 // --- Animation Variants ---
 const fadeInUp = {
@@ -108,19 +110,28 @@ function EventCard({ month, day, title, time, location, bgColor, type }) {
 
 export default function Workshop() {
   const [filter, setFilter] = useState('all');
+  const [events, setEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // ── Event list: only 'date' (YYYY-MM-DD), 'type' is auto-derived ──
-  const rawEvents = [
-    { id: 1, date: '2026-04-10', title: 'Artificial Intelligence',  time: '15:00 - 17:00', location: 'Gujarat University',   bgColor: 'bg-[#14627a]' },
-    { id: 2, date: '2026-03-20', title: 'Web Development Bootcamp', time: '10:00 - 13:00', location: 'Tejeel HQ',            bgColor: 'bg-[#6fa7b8]' },
-    { id: 3, date: '2026-05-05', title: 'Data Science Summit',      time: '09:00 - 18:00', location: 'Ahmedabad IT Park',    bgColor: 'bg-[#14627a]' },
-    { id: 4, date: '2026-01-12', title: 'Robotics Workshop',        time: '10:00 - 12:00', location: 'Ahmedabad IT Park',    bgColor: 'bg-[#6fa7b8]' },
-    { id: 5, date: '2026-02-15', title: 'Cloud Computing',          time: '14:00 - 16:00', location: 'Tejeel HQ',            bgColor: 'bg-[#14627a]' },
-    { id: 6, date: '2025-12-28', title: 'Cyber Security',           time: '11:00 - 13:00', location: 'Online Webinar',       bgColor: 'bg-[#6fa7b8]' },
-  ];
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setIsLoading(true);
+        const data = await eventService.getEvents();
+        const classified = classifyEvents(data);
+        setEvents(classified);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching events:', err);
+        setError('Failed to load events. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
 
-  // Auto-classify each event based on today's date
-  const events = classifyEvents(rawEvents);
 
   const displayed = filter === 'all' ? events : events.filter(e => e.type === filter);
 
@@ -195,16 +206,32 @@ export default function Workshop() {
       {/* ── Events Grid ── */}
       <div className="py-8 sm:py-12 md:py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto min-h-[400px]">
-          <motion.div 
-            layout
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-8"
-          >
-            <AnimatePresence mode="popLayout">
-              {displayed.map((event) => (
-                <EventCard key={event.id} {...event} />
-              ))}
-            </AnimatePresence>
-          </motion.div>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14627a]"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-20">
+              <p className="text-red-500 text-lg">{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="mt-4 px-6 py-2 bg-[#14627a] text-white rounded-lg"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <motion.div 
+              layout
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-8"
+            >
+              <AnimatePresence mode="popLayout">
+                {displayed.map((event) => (
+                  <EventCard key={event.id} {...event} />
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          )}
 
           {displayed.length === 0 && (
             <motion.p
