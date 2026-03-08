@@ -7,6 +7,7 @@ const Event = require('./Event');
 const EventRegistration = require('./EventRegistration');
 const BlogPost = require('./BlogPost');
 const { Category, Tag } = require('./CategoryTag');
+const Role = require('./Role');
 
 module.exports = {
   User,
@@ -18,5 +19,6 @@ module.exports = {
   EventRegistration,
   BlogPost,
   Category,
-  Tag
+  Tag,
+  Role
 };

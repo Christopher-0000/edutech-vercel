@@ -45,13 +45,23 @@ router.get('/users', adminAuth, async (req, res) => {
 });
 
 router.post('/users', adminAuth, async (req, res) => {
-  const user = await User.create(req.body);
-  res.json({ success: true, user: user.getPublicProfile() });
+  try {
+    const { role, ...userData } = req.body; // strip old string role field
+    const user = await User.create(userData);
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
 });
 
 router.put('/users/:id', adminAuth, async (req, res) => {
-  const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true }).select('-password');
-  res.json({ success: true, user });
+  try {
+    const { role, ...userData } = req.body; // strip old string role field
+    const user = await User.findByIdAndUpdate(req.params.id, userData, { new: true }).select('-password');
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
 });
 
 router.delete('/users/:id', adminAuth, async (req, res) => {

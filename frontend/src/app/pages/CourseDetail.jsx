@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import svgPaths from "../../imports/svg-78otquld5h";
 
-import svgPaths from "../../imports/svg-78otquld5h";
 import { imgStarColor } from "../../imports/svg-nvm9s";
 import Header from "../components/ui/Header";
 import Footer from "../components/ui/Footer";

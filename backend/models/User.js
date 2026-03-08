@@ -3,45 +3,82 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true, trim: true },
-  email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true, select: false },
-  firstName: String,
-  lastName: String,
-  phone: String,
-  address: String,
-  gender: { type: String, enum: ['male', 'female', 'other', 'prefer_not_to_say'] },
-  dateOfBirth: Date,
-  profilePicture: String,
-  role: { type: String, enum: ['student', 'admin'], default: 'student' },
-  isActive: { type: Boolean, default: true },
-  isEmailVerified: { type: Boolean, default: false }
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true
+  },
+  password: {
+    type: String,
+    required: true,
+    minlength: 6,
+    select: false
+  },
+  firstName:   { type: String, trim: true },
+  lastName:    { type: String, trim: true },
+  phone:       { type: String },
+  address:     { type: String },
+  gender:      { type: String },
+  dateOfBirth: { type: Date },
+
+  // RBAC — admin assigns a Role document after signup
+  role: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Role',
+    default: null
+  },
+
+  isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
-userSchema.pre('save', async function(next) {
+// ── Hash password before saving ──────────────────────────────────────────────
+userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-userSchema.methods.comparePassword = async function(enteredPassword) {
+// ── Compare entered password with stored hash ────────────────────────────────
+userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-userSchema.methods.getSignedToken = function() {
-  return jwt.sign({ id: this._id, role: this.role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d'
-  });
+// ── Alias so authController works with both names ───────────────────────────
+userSchema.methods.matchPassword = userSchema.methods.comparePassword;
+
+// ── Generate signed JWT ──────────────────────────────────────────────────────
+userSchema.methods.getSignedToken = function () {
+  return jwt.sign(
+    { id: this._id },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRE || '30d' }
+  );
 };
 
-userSchema.methods.getPublicProfile = function() {
+// ── Return safe public profile (no password) ────────────────────────────────
+userSchema.methods.getPublicProfile = function () {
   return {
-    id: this._id,
-    username: this.username,
-    email: this.email,
-    firstName: this.firstName,
-    lastName: this.lastName,
-    role: this.role
+    _id:         this._id,
+    username:    this.username,
+    email:       this.email,
+    firstName:   this.firstName,
+    lastName:    this.lastName,
+    phone:       this.phone,
+    address:     this.address,
+    gender:      this.gender,
+    dateOfBirth: this.dateOfBirth,
+    role:        this.role,   // populated Role object or null
+    isActive:    this.isActive,
+    createdAt:   this.createdAt
   };
 };
 

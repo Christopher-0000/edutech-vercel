@@ -10,7 +10,7 @@ const {
   updateBlogPost,
   deleteBlogPost,
 } = require('../controllers/blogController');
-const { protect } = require('../middleware/auth');
+const { protect, requirePermission } = require('../middleware/auth');
 
 // Public routes
 router.get('/', getBlogPosts);
@@ -19,9 +19,9 @@ router.get('/categories', getCategories);
 router.get('/tags', getTags);
 router.get('/:slug', getBlogPost);
 
-// Protected routes (require authentication)
-router.post('/', protect, createBlogPost);
-router.put('/:slug', protect, updateBlogPost);
-router.delete('/:slug', protect, deleteBlogPost);
+// Protected routes
+router.post('/', protect, requirePermission('write'), createBlogPost);
+router.put('/:slug', protect, requirePermission('write'), updateBlogPost);
+router.delete('/:slug', protect, requirePermission('write'), deleteBlogPost);
 
 module.exports = router;

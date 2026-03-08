@@ -17,7 +17,8 @@ exports.login = asyncHandler(async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ success: false, error: 'Please provide email and password' });
   }
-  const user = await User.findOne({ email }).select('+password');
+  // populate role so permissions are included in the response
+  const user = await User.findOne({ email }).select('+password').populate('role');
   if (!user || !(await user.comparePassword(password))) {
     return res.status(401).json({ success: false, error: 'Invalid credentials' });
   }
@@ -29,7 +30,9 @@ exports.login = asyncHandler(async (req, res) => {
 });
 
 exports.getProfile = asyncHandler(async (req, res) => {
-  res.json({ success: true, user: req.user.getPublicProfile() });
+  // re-fetch with role populated so permissions are always fresh
+  const user = await User.findById(req.user.id).populate('role');
+  res.json({ success: true, user: user.getPublicProfile() });
 });
 
 exports.updateProfile = asyncHandler(async (req, res) => {
@@ -38,7 +41,7 @@ exports.updateProfile = asyncHandler(async (req, res) => {
   Object.keys(req.body).forEach(key => {
     if (allowed.includes(key)) updates[key] = req.body[key];
   });
-  const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true });
+  const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).populate('role');
   res.json({ success: true, user: user.getPublicProfile() });
 });
 

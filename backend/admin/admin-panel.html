@@ -1,518 +1,1083 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduTech Admin - Complete</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
-        .login-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); max-width: 400px; margin: 100px auto; }
-        .login-box h2 { margin-bottom: 30px; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #667eea; }
-        button { padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 5px; font-weight: 600; }
-        button:hover { opacity: 0.9; }
-        .btn-danger { background: #dc3545; }
-        .btn-success { background: #28a745; }
-        .btn-warning { background: #ffc107; color: #333; }
-        .error { background: #fee; color: #c33; padding: 12px; border-radius: 6px; margin: 10px 0; display: none; }
-        .success { background: #efe; color: #3c3; padding: 12px; border-radius: 6px; margin: 10px 0; }
-        .admin-panel { display: none; max-width: 1400px; margin: 0 auto; }
-        .header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .stat-card h3 { font-size: 32px; color: #667eea; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab { padding: 12px 24px; background: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .tab.active { background: #667eea; color: white; }
-        .content-box { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #f8f9fa; font-weight: 600; }
-        .form-section { display: none; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; }
-        label { display: block; margin-top: 12px; font-weight: 500; font-size: 14px; }
-        .preview-img { max-width: 200px; margin: 10px 0; border-radius: 8px; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; }
-        .modal-content { background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 50px auto; max-height: 80vh; overflow-y: auto; }
-        .close { float: right; font-size: 28px; cursor: pointer; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EduTech Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f7f5;
+      --surface: #ffffff;
+      --border: #e8e8e4;
+      --border-soft: #f0f0ec;
+      --text: #1a1a18;
+      --text-muted: #888880;
+      --text-light: #b0b0a8;
+      --accent: #1a1a18;
+      --accent-fg: #ffffff;
+      --danger: #c0392b;
+      --success: #27ae60;
+      --warning: #e67e22;
+      --radius: 8px;
+      --radius-sm: 4px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Login ── */
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 48px;
+      width: 360px;
+    }
+
+    .login-card h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+
+    .login-card p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 32px;
+    }
+
+    /* ── Layout ── */
+    .shell { display: none; min-height: 100vh; }
+
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 220px;
+      height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 0;
+    }
+
+    .sidebar-brand {
+      padding: 0 24px 24px;
+      border-bottom: 1px solid var(--border-soft);
+      margin-bottom: 16px;
+    }
+
+    .sidebar-brand span {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .sidebar-brand small {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      margin-top: 2px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 24px;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 0;
+      transition: color 0.15s, background 0.15s;
+      font-size: 13.5px;
+      font-weight: 500;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    .nav-item:hover { color: var(--text); background: var(--bg); }
+    .nav-item.active { color: var(--text); background: var(--bg); }
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      width: 2px;
+      height: 20px;
+      background: var(--text);
+      border-radius: 0 2px 2px 0;
+    }
+    .nav-item { position: relative; }
+
+    .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px 24px 0;
+      border-top: 1px solid var(--border-soft);
+    }
+
+    .logout-btn {
+      font-size: 13px;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      padding: 0;
+    }
+    .logout-btn:hover { color: var(--danger); }
+
+    .main {
+      margin-left: 220px;
+      padding: 40px 48px;
+      max-width: 1100px;
+    }
+
+    /* ── Stats ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+    }
+
+    .stat-num {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -1px;
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 2px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Tab content ── */
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .pane-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .pane-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    /* ── Forms ── */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 24px;
+      display: none;
+    }
+
+    .form-card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid.single { grid-template-columns: 1fr; }
+    .form-col-2 { grid-column: span 2; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 12px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="datetime-local"],
+    input[type="file"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13.5px;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--surface);
+      color: var(--text);
+      transition: border-color 0.15s;
+      outline: none;
+    }
+
+    input:focus, select:focus, textarea:focus { border-color: var(--text); }
+    textarea { resize: vertical; min-height: 80px; }
+
+    .form-actions { display: flex; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-soft); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: opacity 0.15s, background 0.15s;
+      line-height: 1;
+    }
+
+    .btn:hover { opacity: 0.85; }
+
+    .btn-primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+    .btn-ghost   { background: transparent; color: var(--text); border-color: var(--border); }
+    .btn-ghost:hover { background: var(--bg); opacity: 1; }
+    .btn-danger  { background: transparent; color: var(--danger); border-color: #e8d5d3; }
+    .btn-danger:hover { background: #fdf5f5; opacity: 1; }
+    .btn-warn    { background: transparent; color: var(--warning); border-color: #f0e0cc; }
+    .btn-warn:hover { background: #fdf8f2; opacity: 1; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead tr { border-bottom: 1px solid var(--border); }
+    th {
+      padding: 12px 16px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: left;
+      background: var(--bg);
+    }
+
+    td {
+      padding: 13px 16px;
+      font-size: 13.5px;
+      border-bottom: 1px solid var(--border-soft);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--bg); }
+
+    .td-actions { display: flex; gap: 8px; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .badge-read    { background: #ebf5ff; color: #2563eb; }
+    .badge-write   { background: #f0fdf4; color: #16a34a; }
+    .badge-execute { background: #faf5ff; color: #7c3aed; }
+    .badge-none    { background: var(--bg); color: var(--text-light); }
+
+    /* ── Roles tab specific ── */
+    .roles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+
+    .perm-toggle {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      margin-bottom: 8px;
+    }
+
+    .perm-toggle:hover { border-color: var(--text); }
+    .perm-toggle input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--text); cursor: pointer; }
+
+    .perm-info .perm-name { font-size: 13px; font-weight: 500; }
+    .perm-info .perm-desc { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+
+    .default-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 12px;
+      cursor: pointer;
+    }
+    .default-toggle input { width: 16px; height: 16px; accent-color: var(--text); }
+
+    .role-row { background: var(--surface); }
+
+    .assign-select {
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      background: var(--surface);
+      cursor: pointer;
+      outline: none;
+      max-width: 160px;
+    }
+
+    /* ── Alerts ── */
+    .alert {
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+    .alert-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; display: block; }
+    .alert-error   { background: #fdf5f5; color: var(--danger); border: 1px solid #fecaca; display: block; }
+
+    /* ── Modal ── */
+    .modal-bg {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-bg.open { display: flex; }
+
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      width: 480px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .modal-header h3 { font-size: 16px; font-weight: 600; }
+    .modal-close { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-muted); line-height: 1; }
+    .modal-close:hover { color: var(--text); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      background: var(--text);
+      color: var(--accent-fg);
+      padding: 12px 18px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: none; }
+
+    .preview-img { max-width: 120px; border-radius: var(--radius-sm); margin-top: 8px; display: none; }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* Login specific */
+    .login-wrap input {
+      margin-bottom: 12px;
+    }
+    .login-error {
+      color: var(--danger);
+      font-size: 13px;
+      margin-bottom: 12px;
+      display: none;
+    }
+  </style>
 </head>
 <body>
-    <div id="loginScreen" class="login-box">
-        <h2>🎓 EduTech Admin</h2>
-        <div id="loginError" class="error"></div>
-        <input type="email" id="loginEmail" placeholder="Email" value="admin@edutech.com">
-        <input type="password" id="loginPassword" placeholder="Password" value="admin123">
-        <button onclick="login()" style="width: 100%;">Login</button>
+
+<!-- ── LOGIN ─────────────────────────────────────────────────── -->
+<div class="login-wrap" id="loginScreen">
+  <div class="login-card">
+    <h1>EduTech Admin</h1>
+    <p>Sign in to manage your platform.</p>
+    <div class="login-error" id="loginError">Incorrect email or password.</div>
+    <input type="email" id="loginEmail" placeholder="Email" value="admin@edutech.com">
+    <input type="password" id="loginPassword" placeholder="Password" value="admin123">
+    <button class="btn btn-primary" style="width:100%; justify-content:center; padding:11px;" onclick="login()">Sign in</button>
+  </div>
+</div>
+
+<!-- ── SHELL ──────────────────────────────────────────────────── -->
+<div class="shell" id="shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span>EduTech</span>
+      <small>Admin Console</small>
+    </div>
+    <button class="nav-item active" onclick="showTab('courses', this)"><span class="nav-icon">📚</span> Courses</button>
+    <button class="nav-item" onclick="showTab('events', this)"><span class="nav-icon">📅</span> Events</button>
+    <button class="nav-item" onclick="showTab('users', this)"><span class="nav-icon">👥</span> Users</button>
+    <button class="nav-item" onclick="showTab('roles', this)"><span class="nav-icon">🔐</span> Roles</button>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-num" id="usersCount">—</div><div class="stat-label">Users</div></div>
+      <div class="stat"><div class="stat-num" id="coursesCount">—</div><div class="stat-label">Courses</div></div>
+      <div class="stat"><div class="stat-num" id="eventsCount">—</div><div class="stat-label">Events</div></div>
+      <div class="stat"><div class="stat-num" id="postsCount">—</div><div class="stat-label">Posts</div></div>
     </div>
 
-    <div id="adminPanel" class="admin-panel">
-        <div class="header">
-            <div><h1>🚀 EduTech Admin</h1></div>
-            <button onclick="logout()">Logout</button>
-        </div>
+    <!-- ── COURSES ── -->
+    <div class="tab-pane active" id="tab-courses">
+      <div class="pane-header">
+        <h2>Courses</h2>
+        <button class="btn btn-primary" onclick="toggleForm('courseForm')">+ New Course</button>
+      </div>
 
-        <div class="stats">
-            <div class="stat-card"><h3 id="usersCount">0</h3><p>Users</p></div>
-            <div class="stat-card"><h3 id="coursesCount">0</h3><p>Courses</p></div>
-            <div class="stat-card"><h3 id="eventsCount">0</h3><p>Events</p></div>
-            <div class="stat-card"><h3 id="postsCount">0</h3><p>Posts</p></div>
-        </div>
-
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('courses')">📚 Courses</button>
-            <button class="tab" onclick="showTab('events')">📅 Events</button>
-            <button class="tab" onclick="showTab('users')">👥 Users</button>
-        </div>
-
-        <!-- COURSES -->
-        <div id="coursesTab" class="tab-content active">
-            <div class="content-box">
-                <h2>Courses</h2>
-                <button class="btn-success" onclick="toggleForm('createCourseForm')">+ Create Course</button>
-                
-                <div id="createCourseForm" class="form-section">
-                    <h3>New Course</h3>
-                    <label>Title *</label>
-                    <input type="text" id="courseTitle" required>
-                    <label>Description *</label>
-                    <textarea id="courseDescription" rows="4" required></textarea>
-                    <label>Thumbnail Image</label>
-                    <input type="file" id="courseThumbnail" accept="image/*" onchange="previewImage(this, 'courseThumbPreview')">
-                    <img id="courseThumbPreview" class="preview-img" style="display:none;">
-                    <label>Type</label>
-                    <select id="courseType">
-                        <option value="free">Free</option>
-                        <option value="paid">Paid</option>
-                    </select>
-                    <label>Price ($)</label>
-                    <input type="number" id="coursePrice" value="0">
-                    <label>Level</label>
-                    <select id="courseLevel">
-                        <option value="beginner">Beginner</option>
-                        <option value="intermediate">Intermediate</option>
-                        <option value="advanced">Advanced</option>
-                    </select>
-                    <div style="margin-top: 20px;">
-                        <button class="btn-success" onclick="createCourse()">Create</button>
-                        <button class="btn-danger" onclick="toggleForm('createCourseForm')">Cancel</button>
-                    </div>
-                    <div id="courseMessage"></div>
-                </div>
-
-                <table id="coursesTable">
-                    <thead><tr><th>Title</th><th>Type</th><th>Price</th><th>Enrollments</th><th>Actions</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- EVENTS -->
-        <div id="eventsTab" class="tab-content">
-            <div class="content-box">
-                <h2>Events</h2>
-                <button class="btn-success" onclick="toggleForm('createEventForm')">+ Create Event</button>
-                
-                <div id="createEventForm" class="form-section">
-                    <h3>New Event</h3>
-                    <label>Title *</label>
-                    <input type="text" id="eventTitle" required>
-                    <label>Description *</label>
-                    <textarea id="eventDescription" rows="4" required></textarea>
-                    <label>Event Image</label>
-                    <input type="file" id="eventThumbnail" accept="image/*" onchange="previewImage(this, 'eventThumbPreview')">
-                    <img id="eventThumbPreview" class="preview-img" style="display:none;">
-                    <label>Type</label>
-                    <select id="eventType">
-                        <option value="webinar">Webinar</option>
-                        <option value="seminar">Seminar</option>
-                        <option value="workshop">Workshop</option>
-                        <option value="conference">Conference</option>
-                    </select>
-                    <label>Start Date/Time</label>
-                    <input type="datetime-local" id="eventStart">
-                    <label>End Date/Time</label>
-                    <input type="datetime-local" id="eventEnd">
-                    <label>Max Participants</label>
-                    <input type="number" id="eventMaxParticipants" placeholder="Leave empty for unlimited">
-                    <div style="margin-top: 20px;">
-                        <button class="btn-success" onclick="createEvent()">Create</button>
-                        <button class="btn-danger" onclick="toggleForm('createEventForm')">Cancel</button>
-                    </div>
-                    <div id="eventMessage"></div>
-                </div>
-
-                <table id="eventsTable">
-                    <thead><tr><th>Title</th><th>Type</th><th>Date</th><th>Registrations</th><th>Actions</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- USERS -->
-        <div id="usersTab" class="tab-content">
-            <div class="content-box">
-                <h2>Users</h2>
-                <button class="btn-success" onclick="toggleForm('createUserForm')">+ Create User</button>
-                
-                <div id="createUserForm" class="form-section">
-                    <h3>New User</h3>
-                    <label>Username *</label>
-                    <input type="text" id="userName" required>
-                    <label>Email *</label>
-                    <input type="email" id="userEmail" required>
-                    <label>Password *</label>
-                    <input type="password" id="userPassword" required>
-                    <label>First Name</label>
-                    <input type="text" id="userFirstName">
-                    <label>Last Name</label>
-                    <input type="text" id="userLastName">
-                    <label>Role *</label>
-                    <select id="userRole">
-                        <option value="student">Student</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                    <div style="margin-top: 20px;">
-                        <button class="btn-success" onclick="createUser()">Create</button>
-                        <button class="btn-danger" onclick="toggleForm('createUserForm')">Cancel</button>
-                    </div>
-                    <div id="userMessage"></div>
-                </div>
-
-                <table id="usersTable">
-                    <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- EDIT USER MODAL -->
-    <div id="editUserModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('editUserModal')">&times;</span>
-            <h2>Edit User</h2>
-            <input type="hidden" id="editUserId">
-            <label>Username</label>
-            <input type="text" id="editUserName">
-            <label>Email</label>
-            <input type="email" id="editUserEmail">
-            <label>Role</label>
-            <select id="editUserRole">
-                <option value="student">Student</option>
-                <option value="admin">Admin</option>
+      <div class="form-card" id="courseForm">
+        <h3>New Course</h3>
+        <div class="form-grid">
+          <div class="field form-col-2"><label>Title</label><input type="text" id="courseTitle"></div>
+          <div class="field form-col-2"><label>Description</label><textarea id="courseDescription"></textarea></div>
+          <div class="field"><label>Type</label>
+            <select id="courseType"><option value="free">Free</option><option value="paid">Paid</option></select>
+          </div>
+          <div class="field"><label>Price ($)</label><input type="number" id="coursePrice" value="0"></div>
+          <div class="field"><label>Level</label>
+            <select id="courseLevel">
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
             </select>
-            <label>First Name</label>
-            <input type="text" id="editUserFirstName">
-            <label>Last Name</label>
-            <input type="text" id="editUserLastName">
-            <div style="margin-top: 20px;">
-                <button class="btn-success" onclick="updateUser()">Update</button>
-                <button class="btn-danger" onclick="closeModal('editUserModal')">Cancel</button>
-            </div>
-            <div id="editUserMessage"></div>
+          </div>
+          <div class="field"><label>Thumbnail</label>
+            <input type="file" id="courseThumbnail" accept="image/*" onchange="previewImage(this,'courseThumbPreview')">
+            <img id="courseThumbPreview" class="preview-img">
+          </div>
         </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="createCourse()">Create course</button>
+          <button class="btn btn-ghost" onclick="toggleForm('courseForm')">Cancel</button>
+        </div>
+        <div id="courseMsg"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="coursesTable">
+          <thead><tr><th>Title</th><th>Type</th><th>Price</th><th>Enrollments</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
 
-    <script>
-        let authHeader = '';
-        const API = 'http://localhost:5000';
+    <!-- ── EVENTS ── -->
+    <div class="tab-pane" id="tab-events">
+      <div class="pane-header">
+        <h2>Events</h2>
+        <button class="btn btn-primary" onclick="toggleForm('eventForm')">+ New Event</button>
+      </div>
 
-        function login() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            authHeader = 'Basic ' + btoa(email + ':' + password);
-            fetch(`${API}/admin`, { headers: { 'Authorization': authHeader } })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    const err = document.getElementById('loginError');
-                    err.textContent = 'Invalid credentials';
-                    err.style.display = 'block';
-                } else {
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('adminPanel').style.display = 'block';
-                    loadDashboard();
-                }
-            });
+      <div class="form-card" id="eventForm">
+        <h3>New Event</h3>
+        <div class="form-grid">
+          <div class="field form-col-2"><label>Title</label><input type="text" id="eventTitle"></div>
+          <div class="field form-col-2"><label>Description</label><textarea id="eventDescription"></textarea></div>
+          <div class="field"><label>Type</label>
+            <select id="eventType">
+              <option value="webinar">Webinar</option>
+              <option value="seminar">Seminar</option>
+              <option value="workshop">Workshop</option>
+              <option value="conference">Conference</option>
+            </select>
+          </div>
+          <div class="field"><label>Max Participants</label><input type="number" id="eventMax" placeholder="Unlimited"></div>
+          <div class="field"><label>Start</label><input type="datetime-local" id="eventStart"></div>
+          <div class="field"><label>End</label><input type="datetime-local" id="eventEnd"></div>
+          <div class="field form-col-2"><label>Image</label>
+            <input type="file" id="eventThumbnail" accept="image/*" onchange="previewImage(this,'eventThumbPreview')">
+            <img id="eventThumbPreview" class="preview-img">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="createEvent()">Create event</button>
+          <button class="btn btn-ghost" onclick="toggleForm('eventForm')">Cancel</button>
+        </div>
+        <div id="eventMsg"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="eventsTable">
+          <thead><tr><th>Title</th><th>Type</th><th>Date</th><th>Registrations</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── USERS ── -->
+    <div class="tab-pane" id="tab-users">
+      <div class="pane-header">
+        <h2>Users</h2>
+        <button class="btn btn-primary" onclick="toggleForm('userForm')">+ New User</button>
+      </div>
+
+      <div class="form-card" id="userForm">
+        <h3>New User</h3>
+        <div class="form-grid">
+          <div class="field"><label>Username</label><input type="text" id="userName"></div>
+          <div class="field"><label>Email</label><input type="email" id="userEmail"></div>
+          <div class="field"><label>Password</label><input type="password" id="userPassword"></div>
+          <div class="field"><label>First Name</label><input type="text" id="userFirstName"></div>
+          <div class="field"><label>Last Name</label><input type="text" id="userLastName"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="createUser()">Create user</button>
+          <button class="btn btn-ghost" onclick="toggleForm('userForm')">Cancel</button>
+        </div>
+        <div id="userMsg"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="usersTable">
+          <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── ROLES ── -->
+    <div class="tab-pane" id="tab-roles">
+      <div class="pane-header">
+        <h2>Roles & Permissions</h2>
+      </div>
+
+      <div class="roles-grid">
+        <!-- Left: create/edit form -->
+        <div>
+          <div class="form-card" id="roleForm" style="display:block; margin-bottom:0;">
+            <h3 id="roleFormTitle">New Role</h3>
+            <input type="hidden" id="editingRoleId">
+            <div class="field" style="margin-bottom:16px;">
+              <label>Role Name</label>
+              <input type="text" id="roleName" placeholder="e.g. Intern, Senior Dev">
+            </div>
+            <div class="field">
+              <label>Permissions</label>
+              <label class="perm-toggle">
+                <input type="checkbox" id="permRead">
+                <div class="perm-info">
+                  <div class="perm-name">Read</div>
+                  <div class="perm-desc">View courses, blog posts and events</div>
+                </div>
+              </label>
+              <label class="perm-toggle">
+                <input type="checkbox" id="permWrite">
+                <div class="perm-info">
+                  <div class="perm-name">Write</div>
+                  <div class="perm-desc">Create and edit courses, blogs, events</div>
+                </div>
+              </label>
+              <label class="perm-toggle">
+                <input type="checkbox" id="permExecute">
+                <div class="perm-info">
+                  <div class="perm-name">Execute</div>
+                  <div class="perm-desc">Enroll in courses, register for events</div>
+                </div>
+              </label>
+            </div>
+            <label class="default-toggle">
+              <input type="checkbox" id="isDefault">
+              Set as default for new signups
+            </label>
+            <div class="form-actions">
+              <button class="btn btn-primary" onclick="saveRole()">Save role</button>
+              <button class="btn btn-ghost" id="cancelRoleEdit" style="display:none;" onclick="cancelRoleEdit()">Cancel</button>
+            </div>
+            <div id="roleMsg"></div>
+          </div>
+        </div>
+
+        <!-- Right: existing roles -->
+        <div>
+          <div class="table-wrap">
+            <table id="rolesTable">
+              <thead><tr><th>Name</th><th>Permissions</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assign roles to users -->
+      <div class="pane-header" style="margin-top:32px;">
+        <h2 style="font-size:15px; color: var(--text-muted); font-weight:500;">Assign roles to users</h2>
+      </div>
+      <div class="table-wrap">
+        <table id="assignTable">
+          <thead><tr><th>Name</th><th>Email</th><th>Assigned Role</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── EDIT USER MODAL ── -->
+<div class="modal-bg" id="editUserModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Edit User</h3>
+      <button class="modal-close" onclick="closeModal('editUserModal')">×</button>
+    </div>
+    <input type="hidden" id="editUserId">
+    <div class="form-grid">
+      <div class="field"><label>Username</label><input type="text" id="editUserName"></div>
+      <div class="field"><label>Email</label><input type="email" id="editUserEmail"></div>
+      <div class="field"><label>First Name</label><input type="text" id="editUserFirstName"></div>
+      <div class="field"><label>Last Name</label><input type="text" id="editUserLastName"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="updateUser()">Save changes</button>
+      <button class="btn btn-ghost" onclick="closeModal('editUserModal')">Cancel</button>
+    </div>
+    <div id="editUserMsg"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let authHeader = '';
+  // Use the current origin so this admin panel works in dev and production
+  // without hard‑coding localhost or a specific domain.
+  const API = window.location.origin;
+  let allRoles = [];
+
+  // ── Auth ──────────────────────────────────────────────────────
+  function login() {
+    const email    = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    authHeader = 'Basic ' + btoa(email + ':' + password);
+    fetch(`${API}/admin`, { headers: { Authorization: authHeader } })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) {
+          document.getElementById('loginError').style.display = 'block';
+        } else {
+          document.getElementById('loginScreen').style.display = 'none';
+          document.getElementById('shell').style.display = 'block';
+          loadAll();
         }
+      });
+  }
 
-        function logout() {
-            authHeader = '';
-            document.getElementById('loginScreen').style.display = 'block';
-            document.getElementById('adminPanel').style.display = 'none';
-        }
+  function logout() {
+    authHeader = '';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('shell').style.display = 'none';
+  }
 
-        function loadDashboard() {
-            fetch(`${API}/admin`, { headers: { 'Authorization': authHeader } })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('usersCount').textContent = data.stats.users;
-                document.getElementById('coursesCount').textContent = data.stats.courses;
-                document.getElementById('eventsCount').textContent = data.stats.events;
-                document.getElementById('postsCount').textContent = data.stats.posts;
-            });
-            loadCourses();
-            loadEvents();
-            loadUsers();
-        }
+  // ── Navigation ────────────────────────────────────────────────
+  function showTab(name, btn) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
 
-        function showTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tab + 'Tab').classList.add('active');
-        }
+  function toggleForm(id) {
+    const el = document.getElementById(id);
+    el.style.display = el.style.display === 'block' ? 'none' : 'block';
+  }
 
-        function toggleForm(formId) {
-            const form = document.getElementById(formId);
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
-        }
+  // ── Toast ─────────────────────────────────────────────────────
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
 
-        function previewImage(input, previewId) {
-            const preview = document.getElementById(previewId);
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
+  function msg(id, text, type = 'success') {
+    const el = document.getElementById(id);
+    el.className = 'alert alert-' + type;
+    el.textContent = text;
+    setTimeout(() => { el.className = 'alert'; el.textContent = ''; }, 3000);
+  }
 
-        async function uploadFile(file) {
-            const formData = new FormData();
-            formData.append('file', file);
-            const response = await fetch(`${API}/upload`, {
-                method: 'POST',
-                headers: { 'Authorization': authHeader },
-                body: formData
-            });
-            const data = await response.json();
-            return data.filepath;
-        }
+  // ── Load all ──────────────────────────────────────────────────
+  function loadAll() {
+    fetch(`${API}/admin`, { headers: { Authorization: authHeader } })
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('usersCount').textContent   = d.stats.users;
+        document.getElementById('coursesCount').textContent = d.stats.courses;
+        document.getElementById('eventsCount').textContent  = d.stats.events;
+        document.getElementById('postsCount').textContent   = d.stats.posts;
+      });
+    loadCourses(); loadEvents(); loadUsers(); loadRoles();
+  }
 
-        async function createCourse() {
-            const thumbnailFile = document.getElementById('courseThumbnail').files[0];
-            let thumbnailPath = '';
-            if (thumbnailFile) {
-                thumbnailPath = await uploadFile(thumbnailFile);
-            }
+  // ── Image preview ─────────────────────────────────────────────
+  function previewImage(input, previewId) {
+    const el = document.getElementById(previewId);
+    if (input.files && input.files[0]) {
+      const r = new FileReader();
+      r.onload = e => { el.src = e.target.result; el.style.display = 'block'; };
+      r.readAsDataURL(input.files[0]);
+    }
+  }
 
-            const course = {
-                title: document.getElementById('courseTitle').value,
-                description: document.getElementById('courseDescription').value,
-                thumbnail: thumbnailPath,
-                courseType: document.getElementById('courseType').value,
-                price: parseFloat(document.getElementById('coursePrice').value),
-                level: document.getElementById('courseLevel').value,
-                isActive: true
-            };
+  async function uploadFile(file) {
+    const fd = new FormData();
+    fd.append('file', file);
+    const r = await fetch(`${API}/upload`, { method: 'POST', headers: { Authorization: authHeader }, body: fd });
+    return (await r.json()).filepath;
+  }
 
-            fetch(`${API}/admin/courses`, {
-                method: 'POST',
-                headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
-                body: JSON.stringify(course)
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('courseMessage').innerHTML = '<div class="success">✅ Course created!</div>';
-                loadCourses();
-                loadDashboard();
-                setTimeout(() => toggleForm('createCourseForm'), 1500);
-            });
-        }
+  // ── Courses ───────────────────────────────────────────────────
+  async function createCourse() {
+    const file = document.getElementById('courseThumbnail').files[0];
+    const thumb = file ? await uploadFile(file) : '';
+    const body = {
+      title: document.getElementById('courseTitle').value,
+      description: document.getElementById('courseDescription').value,
+      thumbnail: thumb,
+      courseType: document.getElementById('courseType').value,
+      price: parseFloat(document.getElementById('coursePrice').value),
+      level: document.getElementById('courseLevel').value,
+      isActive: true
+    };
+    fetch(`${API}/admin/courses`, { method:'POST', headers:{ Authorization:authHeader,'Content-Type':'application/json' }, body:JSON.stringify(body) })
+      .then(r=>r.json()).then(d => { toast('Course created'); loadCourses(); toggleForm('courseForm'); });
+  }
 
-        function loadCourses() {
-            fetch(`${API}/admin/courses`, { headers: { 'Authorization': authHeader } })
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.querySelector('#coursesTable tbody');
-                tbody.innerHTML = '';
-                data.courses.forEach(course => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${course.title}</td>
-                            <td>${course.courseType}</td>
-                            <td>$${course.price}</td>
-                            <td>${course.enrollmentCount}</td>
-                            <td>
-                                <button class="btn-danger" onclick="deleteCourse('${course._id}')">Delete</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            });
-        }
+  function loadCourses() {
+    fetch(`${API}/admin/courses`, { headers:{ Authorization:authHeader } })
+      .then(r=>r.json()).then(d => {
+        const tbody = document.querySelector('#coursesTable tbody');
+        if (!d.courses?.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">No courses yet.</div></td></tr>'; return; }
+        tbody.innerHTML = d.courses.map(c => `
+          <tr>
+            <td>${c.title}</td>
+            <td>${c.courseType}</td>
+            <td>${c.price > 0 ? '$' + c.price : 'Free'}</td>
+            <td>${c.enrollmentCount ?? 0}</td>
+            <td><div class="td-actions"><button class="btn btn-danger btn-sm" onclick="deleteCourse('${c._id}')">Delete</button></div></td>
+          </tr>`).join('');
+      });
+  }
 
-        function deleteCourse(id) {
-            if (confirm('Delete this course?')) {
-                fetch(`${API}/admin/courses/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': authHeader }
-                }).then(() => { loadCourses(); loadDashboard(); });
-            }
-        }
+  function deleteCourse(id) {
+    if (!confirm('Delete this course?')) return;
+    fetch(`${API}/admin/courses/${id}`, { method:'DELETE', headers:{ Authorization:authHeader } })
+      .then(() => { toast('Course deleted'); loadCourses(); loadAll(); });
+  }
 
-        async function createEvent() {
-            const thumbnailFile = document.getElementById('eventThumbnail').files[0];
-            let thumbnailPath = '';
-            if (thumbnailFile) {
-                thumbnailPath = await uploadFile(thumbnailFile);
-            }
+  // ── Events ────────────────────────────────────────────────────
+  async function createEvent() {
+    const file = document.getElementById('eventThumbnail').files[0];
+    const thumb = file ? await uploadFile(file) : '';
+    const body = {
+      title: document.getElementById('eventTitle').value,
+      description: document.getElementById('eventDescription').value,
+      thumbnail: thumb,
+      eventType: document.getElementById('eventType').value,
+      startDateTime: document.getElementById('eventStart').value,
+      endDateTime: document.getElementById('eventEnd').value,
+      maxParticipants: parseInt(document.getElementById('eventMax').value) || null,
+      isActive: true
+    };
+    fetch(`${API}/admin/events`, { method:'POST', headers:{ Authorization:authHeader,'Content-Type':'application/json' }, body:JSON.stringify(body) })
+      .then(r=>r.json()).then(d => { toast('Event created'); loadEvents(); toggleForm('eventForm'); });
+  }
 
-            const event = {
-                title: document.getElementById('eventTitle').value,
-                description: document.getElementById('eventDescription').value,
-                thumbnail: thumbnailPath,
-                eventType: document.getElementById('eventType').value,
-                startDateTime: document.getElementById('eventStart').value,
-                endDateTime: document.getElementById('eventEnd').value,
-                maxParticipants: parseInt(document.getElementById('eventMaxParticipants').value) || null,
-                isActive: true
-            };
+  function loadEvents() {
+    fetch(`${API}/admin/events`, { headers:{ Authorization:authHeader } })
+      .then(r=>r.json()).then(d => {
+        const tbody = document.querySelector('#eventsTable tbody');
+        if (!d.events?.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">No events yet.</div></td></tr>'; return; }
+        tbody.innerHTML = d.events.map(e => `
+          <tr>
+            <td>${e.title}</td>
+            <td>${e.eventType}</td>
+            <td>${new Date(e.startDateTime).toLocaleDateString()}</td>
+            <td>${e.registrationCount ?? 0}</td>
+            <td><div class="td-actions"><button class="btn btn-danger btn-sm" onclick="deleteEvent('${e._id}')">Delete</button></div></td>
+          </tr>`).join('');
+      });
+  }
 
-            fetch(`${API}/admin/events`, {
-                method: 'POST',
-                headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
-                body: JSON.stringify(event)
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('eventMessage').innerHTML = '<div class="success">✅ Event created!</div>';
-                loadEvents();
-                loadDashboard();
-                setTimeout(() => toggleForm('createEventForm'), 1500);
-            });
-        }
+  function deleteEvent(id) {
+    if (!confirm('Delete this event?')) return;
+    fetch(`${API}/admin/events/${id}`, { method:'DELETE', headers:{ Authorization:authHeader } })
+      .then(() => { toast('Event deleted'); loadEvents(); });
+  }
 
-        function loadEvents() {
-            fetch(`${API}/admin/events`, { headers: { 'Authorization': authHeader } })
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.querySelector('#eventsTable tbody');
-                tbody.innerHTML = '';
-                data.events.forEach(event => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${event.title}</td>
-                            <td>${event.eventType}</td>
-                            <td>${new Date(event.startDateTime).toLocaleDateString()}</td>
-                            <td>${event.registrationCount}</td>
-                            <td>
-                                <button class="btn-danger" onclick="deleteEvent('${event._id}')">Delete</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            });
-        }
+  // ── Users ─────────────────────────────────────────────────────
+  function createUser() {
+    const body = {
+      username: document.getElementById('userName').value,
+      email: document.getElementById('userEmail').value,
+      password: document.getElementById('userPassword').value,
+      firstName: document.getElementById('userFirstName').value,
+      lastName: document.getElementById('userLastName').value
+    };
+    fetch(`${API}/admin/users`, { method:'POST', headers:{ Authorization:authHeader,'Content-Type':'application/json' }, body:JSON.stringify(body) })
+      .then(r=>r.json()).then(d => {
+        if (d.success) { toast('User created'); loadUsers(); loadRoles(); toggleForm('userForm'); }
+        else msg('userMsg', d.error || 'Error creating user', 'error');
+      });
+  }
 
-        function deleteEvent(id) {
-            if (confirm('Delete this event?')) {
-                fetch(`${API}/admin/events/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': authHeader }
-                }).then(() => { loadEvents(); loadDashboard(); });
-            }
-        }
+  function loadUsers() {
+    fetch(`${API}/admin/users`, { headers:{ Authorization:authHeader } })
+      .then(r=>r.json()).then(d => {
+        const tbody = document.querySelector('#usersTable tbody');
+        if (!d.users?.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">No users yet.</div></td></tr>'; return; }
+        tbody.innerHTML = d.users.map(u => {
+          const roleLabel = u.role?.name || '<span style="color:var(--text-light)">Unassigned</span>';
+          return `<tr>
+            <td>${u.username}</td>
+            <td>${u.email}</td>
+            <td>${roleLabel}</td>
+            <td>${new Date(u.createdAt).toLocaleDateString()}</td>
+            <td><div class="td-actions">
+              <button class="btn btn-warn btn-sm" onclick="openEditUser('${u._id}','${u.username}','${u.email}','${u.firstName||''}','${u.lastName||''}')">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteUser('${u._id}')">Delete</button>
+            </div></td>
+          </tr>`;
+        }).join('');
+      });
+  }
 
-        function createUser() {
-            const user = {
-                username: document.getElementById('userName').value,
-                email: document.getElementById('userEmail').value,
-                password: document.getElementById('userPassword').value,
-                firstName: document.getElementById('userFirstName').value,
-                lastName: document.getElementById('userLastName').value,
-                role: document.getElementById('userRole').value
-            };
+  function openEditUser(id, username, email, firstName, lastName) {
+    document.getElementById('editUserId').value        = id;
+    document.getElementById('editUserName').value      = username;
+    document.getElementById('editUserEmail').value     = email;
+    document.getElementById('editUserFirstName').value = firstName;
+    document.getElementById('editUserLastName').value  = lastName;
+    document.getElementById('editUserModal').classList.add('open');
+  }
 
-            fetch(`${API}/admin/users`, {
-                method: 'POST',
-                headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
-                body: JSON.stringify(user)
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('userMessage').innerHTML = '<div class="success">✅ User created!</div>';
-                loadUsers();
-                loadDashboard();
-                setTimeout(() => toggleForm('createUserForm'), 1500);
-            });
-        }
+  function updateUser() {
+    const id = document.getElementById('editUserId').value;
+    const body = {
+      username: document.getElementById('editUserName').value,
+      email: document.getElementById('editUserEmail').value,
+      firstName: document.getElementById('editUserFirstName').value,
+      lastName: document.getElementById('editUserLastName').value
+    };
+    fetch(`${API}/admin/users/${id}`, { method:'PUT', headers:{ Authorization:authHeader,'Content-Type':'application/json' }, body:JSON.stringify(body) })
+      .then(r=>r.json()).then(d => { toast('User updated'); loadUsers(); closeModal('editUserModal'); });
+  }
 
-        function loadUsers() {
-            fetch(`${API}/admin/users`, { headers: { 'Authorization': authHeader } })
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.querySelector('#usersTable tbody');
-                tbody.innerHTML = '';
-                data.users.forEach(user => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${user.username}</td>
-                            <td>${user.email}</td>
-                            <td><strong>${user.role}</strong></td>
-                            <td>${new Date(user.createdAt).toLocaleDateString()}</td>
-                            <td>
-                                <button class="btn-warning" onclick="openEditUser('${user._id}', '${user.username}', '${user.email}', '${user.role}', '${user.firstName || ''}', '${user.lastName || ''}')">Edit Role</button>
-                                <button class="btn-danger" onclick="deleteUser('${user._id}')">Delete</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            });
-        }
+  function deleteUser(id) {
+    if (!confirm('Delete this user?')) return;
+    fetch(`${API}/admin/users/${id}`, { method:'DELETE', headers:{ Authorization:authHeader } })
+      .then(() => { toast('User deleted'); loadUsers(); loadAll(); });
+  }
 
-        function openEditUser(id, username, email, role, firstName, lastName) {
-            document.getElementById('editUserId').value = id;
-            document.getElementById('editUserName').value = username;
-            document.getElementById('editUserEmail').value = email;
-            document.getElementById('editUserRole').value = role;
-            document.getElementById('editUserFirstName').value = firstName;
-            document.getElementById('editUserLastName').value = lastName;
-            document.getElementById('editUserModal').style.display = 'block';
-        }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-        function updateUser() {
-            const id = document.getElementById('editUserId').value;
-            const user = {
-                username: document.getElementById('editUserName').value,
-                email: document.getElementById('editUserEmail').value,
-                role: document.getElementById('editUserRole').value,
-                firstName: document.getElementById('editUserFirstName').value,
-                lastName: document.getElementById('editUserLastName').value
-            };
+  // ── Roles ─────────────────────────────────────────────────────
+  async function loadRoles() {
+    const d = await fetch(`${API}/api/roles`).then(r=>r.json());
+    allRoles = d.roles || [];
+    renderRolesTable();
+    renderAssignTable();
+  }
 
-            fetch(`${API}/admin/users/${id}`, {
-                method: 'PUT',
-                headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
-                body: JSON.stringify(user)
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('editUserMessage').innerHTML = '<div class="success">✅ User updated!</div>';
-                loadUsers();
-                setTimeout(() => closeModal('editUserModal'), 1500);
-            });
-        }
+  function renderRolesTable() {
+    const tbody = document.querySelector('#rolesTable tbody');
+    if (!allRoles.length) { tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">No roles yet.</div></td></tr>'; return; }
+    tbody.innerHTML = allRoles.map(r => `
+      <tr>
+        <td>
+          ${r.name}
+          ${r.isDefault ? ' <span style="font-size:10px;color:var(--text-muted);">(default)</span>' : ''}
+        </td>
+        <td>
+          ${r.permissions.read    ? '<span class="badge badge-read">Read</span> '    : ''}
+          ${r.permissions.write   ? '<span class="badge badge-write">Write</span> '  : ''}
+          ${r.permissions.execute ? '<span class="badge badge-execute">Execute</span>': ''}
+          ${!r.permissions.read && !r.permissions.write && !r.permissions.execute ? '<span class="badge badge-none">None</span>' : ''}
+        </td>
+        <td><div class="td-actions">
+          <button class="btn btn-warn btn-sm" onclick="editRole('${r._id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteRole('${r._id}','${r.name}')">Delete</button>
+        </div></td>
+      </tr>`).join('');
+  }
 
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
+  async function renderAssignTable() {
+    const d = await fetch(`${API}/admin/users/json`, { headers:{ Authorization:authHeader } }).then(r=>r.json());
+    const users = d.users || [];
+    const tbody = document.querySelector('#assignTable tbody');
+    if (!users.length) { tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">No users to assign.</div></td></tr>'; return; }
+    const opts = allRoles.map(r => `<option value="${r._id}">${r.name}</option>`).join('');
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td>${u.firstName || ''} ${u.lastName || ''} ${!u.firstName && !u.lastName ? u.username : ''}</td>
+        <td>${u.email}</td>
+        <td>
+          <select class="assign-select" id="assign_${u._id}" onchange="assignRole('${u._id}', this.value)">
+            <option value="">— No role —</option>
+            ${opts}
+          </select>
+        </td>
+      </tr>`).join('');
+    users.forEach(u => {
+      if (u.role) {
+        const sel = document.getElementById(`assign_${u._id}`);
+        if (sel) sel.value = u.role._id || u.role;
+      }
+    });
+  }
 
-        function deleteUser(id) {
-            if (confirm('Delete this user?')) {
-                fetch(`${API}/admin/users/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': authHeader }
-                }).then(() => { loadUsers(); loadDashboard(); });
-            }
-        }
-    </script>
+  async function saveRole() {
+    const id   = document.getElementById('editingRoleId').value;
+    const name = document.getElementById('roleName').value.trim();
+    if (!name) { toast('Please enter a role name'); return; }
+    const body = {
+      name,
+      permissions: {
+        read:    document.getElementById('permRead').checked,
+        write:   document.getElementById('permWrite').checked,
+        execute: document.getElementById('permExecute').checked
+      },
+      isDefault: document.getElementById('isDefault').checked
+    };
+    const r = await fetch(`${API}/api/roles${id ? '/'+id : ''}`, {
+      method: id ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(r=>r.json());
+
+    if (r.success) { toast(id ? 'Role updated' : 'Role created'); cancelRoleEdit(); loadRoles(); }
+    else msg('roleMsg', r.error || 'Error saving role', 'error');
+  }
+
+  function editRole(id) {
+    const role = allRoles.find(r => r._id === id);
+    if (!role) return;
+    document.getElementById('editingRoleId').value    = role._id;
+    document.getElementById('roleName').value         = role.name;
+    document.getElementById('permRead').checked       = role.permissions.read;
+    document.getElementById('permWrite').checked      = role.permissions.write;
+    document.getElementById('permExecute').checked    = role.permissions.execute;
+    document.getElementById('isDefault').checked      = role.isDefault;
+    document.getElementById('roleFormTitle').textContent = 'Edit Role';
+    document.getElementById('cancelRoleEdit').style.display = 'inline-flex';
+  }
+
+  function cancelRoleEdit() {
+    document.getElementById('editingRoleId').value = '';
+    document.getElementById('roleName').value = '';
+    document.getElementById('permRead').checked = false;
+    document.getElementById('permWrite').checked = false;
+    document.getElementById('permExecute').checked = false;
+    document.getElementById('isDefault').checked = false;
+    document.getElementById('roleFormTitle').textContent = 'New Role';
+    document.getElementById('cancelRoleEdit').style.display = 'none';
+  }
+
+  async function deleteRole(id, name) {
+    if (!confirm(`Delete role "${name}"?`)) return;
+    const r = await fetch(`${API}/api/roles/${id}`, { method:'DELETE' }).then(r=>r.json());
+    if (r.success) { toast('Role deleted'); loadRoles(); }
+    else toast(r.error || 'Could not delete role');
+  }
+
+  async function assignRole(userId, roleId) {
+    if (!roleId) return;
+    const r = await fetch(`${API}/api/roles/assign`, {
+      method: 'PUT',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ userId, roleId })
+    }).then(r=>r.json());
+    if (r.success) toast('Role assigned');
+    else toast(r.error || 'Failed to assign role');
+  }
+
+  // Enter key on login
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') login();
+  });
+</script>
 </body>
 </html>
