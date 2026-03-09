@@ -4,8 +4,9 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const multer = require('multer');
+const fs = require('fs');
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const authRoutes = require('./routes/authRoutes');
 const courseRoutes = require('./routes/courseRoutes');
@@ -22,16 +23,27 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: [
-      process.env.FRONTEND_URL || 'http://localhost:3000',
+      process.env.FRONTEND_URL,
       'http://localhost:5173',
       'http://localhost:5174',
+      'http://localhost:3000',
     ],
     credentials: true,
   })
 );
 
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve uploaded files from /tmp on Vercel, or local uploads folder in dev
+const uploadsDir =
+  process.env.NODE_ENV === 'production'
+    ? '/tmp/uploads'
+    : path.join(__dirname, 'uploads');
+
+// Create uploads directory if it doesn't exist
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+app.use('/uploads', express.static(uploadsDir));
 
 // Serve admin panel HTML
 app.get('/admin-panel', (req, res) => {
@@ -41,7 +53,7 @@ app.get('/admin-panel', (req, res) => {
 // File upload route
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, uploadsDir); // ✅ /tmp/uploads on Vercel, local uploads/ in dev
   },
   filename: (req, file, cb) => {
     const uniqueName =
@@ -61,11 +73,23 @@ app.post('/upload', upload.single('file'), (req, res) => {
   res.json({ success: true, filepath: req.file.path.replace(/\\/g, '/') });
 });
 
-// Connect to MongoDB — this runs once per cold start in serverless
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.error('MongoDB error:', err));
+// Connect to MongoDB — cached to avoid reconnecting on every serverless request
+let isConnected = false;
+const connectDB = async () => {
+  if (isConnected) return;
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    isConnected = true;
+    console.log('MongoDB connected');
+  } catch (err) {
+    console.error('MongoDB error:', err);
+  }
+};
+
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
 
 // Admin API
 app.use('/admin', adminRouter);
@@ -82,7 +106,7 @@ app.get('/admin/users/json', async (req, res) => {
   res.json({ success: true, users });
 });
 
-// API root & routes
+// API root
 app.get('/', (req, res) => {
   res.json({
     message: 'EduTech API is running!',
@@ -113,4 +137,3 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
-
