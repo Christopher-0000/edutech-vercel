@@ -23,6 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: [
+      'https://edutech-vercel-client.vercel.app', // ✅ ADDED - your frontend URL
       process.env.FRONTEND_URL,
       'http://localhost:5173',
       'http://localhost:5174',
