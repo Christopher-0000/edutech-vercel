@@ -1,7 +1,7 @@
 // Vercel Serverless Function entrypoint.
 // Wrap the existing Express app so all routes work under /api on Vercel.
 
-const app = require('../app');
+const app = require('../backend/app'); 
 
 module.exports = (req, res) => {
   return app(req, res);
