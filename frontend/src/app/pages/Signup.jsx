@@ -17,10 +17,12 @@ export default function Signup() {
     setSignupError('');
     try {
       await authService.register({
-        name: data.fullName,
+        username: data.fullName,
         email: data.email,
         password: data.password,
-        mobile: data.mobileNumber
+        phone: data.mobileNumber,
+        firstName: data.fullName.split(' ')[0],
+        lastName: data.fullName.split(' ').slice(1).join(' '),
       });
       
       setSubmitSuccess(true);
