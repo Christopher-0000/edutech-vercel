@@ -137,12 +137,5 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.get('/test', (req, res) => {
-  res.json({
-    mongoUri: process.env.MONGODB_URI ? '✅ Set' : '❌ Missing',
-    jwtSecret: process.env.JWT_SECRET ? '✅ Set' : '❌ Missing',
-    nodeEnv: process.env.NODE_ENV,
-  });
-});
 
 module.exports = app;
