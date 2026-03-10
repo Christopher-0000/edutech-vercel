@@ -22,13 +22,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: [
-      'https://edutech-vercel-client.vercel.app', // ✅ ADDED - your frontend URL
-      process.env.FRONTEND_URL,
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:3000',
-    ],
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        'https://edutech-vercel-client.vercel.app',
+        process.env.FRONTEND_URL,
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'http://localhost:3000',
+      ];
+      // Allow all Vercel preview deployments and no-origin requests (Postman etc)
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
@@ -136,6 +144,5 @@ app.use((err, req, res, next) => {
     error: err.message || 'Internal server error',
   });
 });
-
 
 module.exports = app;
