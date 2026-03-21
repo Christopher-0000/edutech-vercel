@@ -91,27 +91,55 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
 let isConnected = false;
 
-// Prefer buffering during startup in serverless environment so early requests do not error.
+if (!process.env.MONGODB_URI) {
+  console.error('❌ MONGODB_URI is missing. Set it in Vercel Environment Variables.');
+}
+
+// Prefer buffering during startup in serverless environment so early requests do not fail.
 mongoose.set('bufferCommands', true);
 
 const connectDB = async () => {
   if (isConnected) return;
 
-  try {
-    const db = await mongoose.connect(process.env.MONGODB_URI, {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      family: 4 // Use IPv4, skip trying IPv6 which can cause SRV errors
-    });
-    isConnected = db.connections[0].readyState === 1; // 1 = connected
-    console.log('✅ MongoDB Atlas connected successfully');
-  } catch (err) {
-    isConnected = false;
-    console.error('❌ MongoDB Atlas connection error:', err);
-    throw err;
+  if (!process.env.MONGODB_URI) {
+    throw new Error('MONGODB_URI is not defined');
   }
+
+  const maxAttempts = 3;
+  let attempt = 0;
+  let lastError = null;
+
+  while (attempt < maxAttempts && !isConnected) {
+    attempt += 1;
+    try {
+      const db = await mongoose.connect(process.env.MONGODB_URI, {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        family: 4 // Use IPv4, skip trying IPv6 which can cause SRV errors
+      });
+      isConnected = db.connections[0].readyState === 1; // 1 = connected
+      console.log('✅ MongoDB Atlas connected successfully (attempt', attempt + ')');
+      return;
+    } catch (err) {
+      lastError = err;
+      console.error(`❌ MongoDB Atlas connection attempt ${attempt}/${maxAttempts} failed:`, err.message || err);
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+  }
+
+  isConnected = false;
+  throw lastError || new Error('Unknown MongoDB connection failure');
 };
+
+// Health check endpoint for quick debugging/uptime checks.
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    db: isConnected ? 'connected' : 'disconnected',
+    mongoUri: process.env.MONGODB_URI ? 'set' : 'missing'
+  });
+});
 
 // Ensure DB is connected before processing each request.
 app.use(async (req, res, next) => {
@@ -119,7 +147,8 @@ app.use(async (req, res, next) => {
     try {
       await connectDB();
     } catch (err) {
-      return res.status(500).json({ error: 'Database connection not ready. Please retry.' });
+      console.error('Database request failed because connection is not ready:', err.message || err);
+      return res.status(503).json({ error: 'Database connection not ready. Please retry in a few seconds.', details: err.message || 'connection issue' });
     }
   }
   next();
