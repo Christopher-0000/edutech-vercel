@@ -153,20 +153,12 @@ export const blogService = {
       const formData = new FormData();
       formData.append('file', file);
       
-      const token = localStorage.getItem('edutech_token');
-      const headers = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const data = await api.post('/upload', formData);
+      
+      if (!data.filepath) {
+        throw new Error('Upload endpoint returned no filepath');
+      }
 
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const uploadUrl = apiUrl.replace(/\/api\/?$/, '/upload');
-
-      const res = await fetch(uploadUrl, {
-        method: 'POST',
-        headers,
-        body: formData
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
       return data.filepath;
     } catch (error) {
       console.error('Error uploading image:', error);

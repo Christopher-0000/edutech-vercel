@@ -72,7 +72,7 @@ cloudinary.config({
 const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 100 * 1024 * 1024 } });
 
-app.post('/upload', upload.single('file'), async (req, res) => {
+app.post('/api/upload', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
@@ -161,7 +161,7 @@ app.use('/admin', adminRouter);
 // API Routes
 app.get('/', (req, res) => {
   res.json({
-    message: 'EduTech API is running',
+    message: 'EduTech API is running !!!!',
     endpoints: {
       auth: '/api/auth',
       courses: '/api/courses',

@@ -18,13 +18,19 @@ const handleResponse = async (response) => {
   return response.json();
 };
 
-const getHeaders = (headers = {}) => {
+const getHeaders = (headers = {}, body = null) => {
   const token = localStorage.getItem('edutech_token');
-  return {
-    'Content-Type': 'application/json',
+  const h = {
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...headers,
   };
+  
+  // Only set application/json if not sending FormData
+  if (!(body instanceof FormData)) {
+    h['Content-Type'] = 'application/json';
+  }
+  
+  return h;
 };
 
 export const api = {
@@ -41,9 +47,9 @@ export const api = {
   post: async (endpoint, data, options = {}) => {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'POST',
-      headers: getHeaders(options.headers),
+      headers: getHeaders(options.headers, data),
       credentials: 'include',
-      body: JSON.stringify(data),
+      body: data instanceof FormData ? data : JSON.stringify(data),
       ...options,
     });
     return handleResponse(response);
@@ -52,9 +58,9 @@ export const api = {
   put: async (endpoint, data, options = {}) => {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'PUT',
-      headers: getHeaders(options.headers),
+      headers: getHeaders(options.headers, data),
       credentials: 'include',
-      body: JSON.stringify(data),
+      body: data instanceof FormData ? data : JSON.stringify(data),
       ...options,
     });
     return handleResponse(response);

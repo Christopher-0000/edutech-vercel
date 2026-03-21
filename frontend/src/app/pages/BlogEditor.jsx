@@ -228,7 +228,8 @@ export default function BlogEditor() {
         const url = await blogService.uploadImage(file);
         setFormData(prev => ({ ...prev, image: url }));
       } catch (err) {
-        alert('Failed to upload hero image.');
+        console.error('Hero image upload failed:', err);
+        alert(`Failed to upload hero image: ${err.message}`);
       } finally {
         setIsSaving(false);
       }
