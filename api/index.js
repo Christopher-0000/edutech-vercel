@@ -111,8 +111,12 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use(async (req, res, next) => {
-  if (!isConnected && req.path.startsWith('/api')) {
-    await connectDB();
+  if (!isConnected) {
+    try {
+      await connectDB();
+    } catch (err) {
+      return res.status(503).json({ error: 'Database connection not ready.' });
+    }
   }
   next();
 });
@@ -157,5 +161,18 @@ if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
-
+// TEMP DEBUG - remove after use
+app.get('/api/debug', async (req, res) => {
+  try {
+    await connectDB();
+    const dbName = mongoose.connection.db.databaseName;
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    const User = require('../backend/models/User');
+    const userCount = await User.countDocuments();
+    const users = await User.find().select('email role').lean();
+    res.json({ dbName, collections: collections.map(c => c.name), userCount, users });
+  } catch(err) {
+    res.json({ error: err.message });
+  }
+});
 module.exports = app;
