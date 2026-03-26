@@ -5,7 +5,7 @@ import {
   Settings, LogOut, Search, Plus, MoreVertical,
   CheckCircle, XCircle, Clock, Trash2, Edit, ExternalLink,
   BarChart3, TrendingUp, UserPlus, AlertCircle, Star, Save, Image as ImageIcon,
-  Megaphone
+  Tag
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import Header from '../components/ui/Header';
@@ -47,6 +47,12 @@ export default function AdminDashboard() {
   const [siteSettings, setSiteSettings] = useState({ heroImages: [], featuredCourseIds: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
+  const [participants, setParticipants] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isParticipantsLoading, setIsParticipantsLoading] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -73,8 +79,12 @@ export default function AdminDashboard() {
         const settingsData = await adminService.getSiteSettings();
         setSiteSettings(settingsData || { heroImages: [], featuredCourseIds: [] });
       } else {
-        const entitiesData = await adminService.getEntities(activeTab);
-        setEntities(entitiesData);
+        const url = `/admin/entities/list/${activeTab}`;
+        // window.alert(`Fetching URL: http://localhost:5000/api${url}`); // Uncomment if needed, but console.log is safer
+        console.log(`[AdminDashboard] Fetching entities for tab: ${activeTab} from ${url}`);
+        const response = await adminService.getEntities(activeTab, true);
+        console.log(`[AdminDashboard] Response for ${activeTab}:`, response);
+        setEntities(response.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch admin data:', error);
@@ -134,21 +144,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleToggleAd = async (course) => {
-    try {
-      const newStatus = !course.isAd;
-      await adminService.updateEntity('courses', course._id || course.id, {
-        isAd: newStatus
-      });
-      setEntities(entities.map(e =>
-        (e._id === course._id || e.id === course.id) ? { ...e, isAd: newStatus } : e
-      ));
-    } catch (error) {
-      console.error('Failed to update AD status:', error);
-      alert('Failed to update AD status');
-    }
-  };
-
   const handleUpdateSettings = async (e) => {
     e && e.preventDefault();
     try {
@@ -164,7 +159,7 @@ export default function AdminDashboard() {
 
   const handleFileUpload = async (index, file) => {
     if (!file) return;
-    
+
     setUploadingIndex(index);
     try {
       const response = await adminService.uploadImage(file);
@@ -189,9 +184,52 @@ export default function AdminDashboard() {
     const id = item._id || item.id;
     if (type === 'blogs') {
       navigate(`/blog/editor/${id}`);
+    } else if (type === 'events') {
+      navigate(`/admin/events/edit/${id}`);
+    } else if (type === 'courses') {
+      navigate(`/admin/courses/edit/${id}`);
+    } else if (type === 'categories') {
+      const newName = prompt('Enter new category name:', item.name);
+      if (newName && newName !== item.name) {
+        handleUpdateCategory(id, newName);
+      }
     } else {
-      // For now, these might not have specialized editors yet, so we'll just alert
-      alert(`Editing ${type} is not implemented yet in this UI. Please use the specialized editor if available.`);
+      alert(`Editing ${type} is not implemented yet.`);
+    }
+  };
+
+  const handleCreateCategory = async (name) => {
+    try {
+      await adminService.createEntity('categories', { name });
+      fetchInitialData();
+    } catch (error) {
+      console.error('Failed to create category:', error);
+      alert('Failed to create category: ' + (error.response?.data?.error || error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleUpdateCategory = async (id, name) => {
+    try {
+      await adminService.updateEntity('categories', id, { name });
+      fetchInitialData();
+    } catch (error) {
+      console.error('Failed to update category:', error);
+      alert('Failed to update category: ' + (error.response?.data?.error || error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleViewParticipants = async (event) => {
+    setSelectedEvent(event);
+    setIsParticipantsModalOpen(true);
+    setIsParticipantsLoading(true);
+    try {
+      const data = await adminService.getEventParticipants(event._id || event.id);
+      setParticipants(data);
+    } catch (error) {
+      console.error('Failed to fetch participants:', error);
+      alert('Failed to load participants');
+    } finally {
+      setIsParticipantsLoading(false);
     }
   };
 
@@ -242,6 +280,12 @@ export default function AdminDashboard() {
               active={activeTab === 'blogs'}
               onClick={() => setActiveTab('blogs')}
             />
+            <SidebarItem
+              icon={Tag}
+              label="Categories"
+              active={activeTab === 'categories'}
+              onClick={() => setActiveTab('categories')}
+            />
           </nav>
 
           <div className="mt-auto pt-6 border-t border-gray-100">
@@ -283,7 +327,19 @@ export default function AdminDashboard() {
                       className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] w-full sm:w-64"
                     />
                   </div>
-                  <button className="bg-[#14627a] text-white p-2 rounded-lg hover:bg-[#0f4a5b] transition-colors shadow-sm">
+                  <button
+                    onClick={() => {
+                      if (activeTab === 'events') navigate('/admin/events/new');
+                      else if (activeTab === 'blogs') navigate('/blog/editor');
+                      else if (activeTab === 'courses') navigate('/admin/courses/new');
+                      else if (activeTab === 'categories') {
+                        const name = prompt('Enter new category name:');
+                        if (name) handleCreateCategory(name);
+                      }
+                      else alert(`Creating ${activeTab} is not implemented yet.`);
+                    }}
+                    className="bg-[#14627a] text-white p-2 rounded-lg hover:bg-[#0f4a5b] transition-colors shadow-sm"
+                  >
                     <Plus className="w-5 h-5" />
                   </button>
                 </div>
@@ -445,7 +501,6 @@ export default function AdminDashboard() {
                               </th>
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                               {activeTab === 'courses' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Featured</th>}
-                              {activeTab === 'courses' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">AD</th>}
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                           </thead>
@@ -462,6 +517,7 @@ export default function AdminDashboard() {
                                         {activeTab === 'users' ? `${item.firstName} ${item.lastName}` : (item.title || item.name)}
                                       </p>
                                       {activeTab === 'users' && <p className="text-xs text-gray-500">{item.email}</p>}
+                                      {activeTab === 'categories' && <p className="text-xs text-gray-500">slug: {item.slug}</p>}
                                     </div>
                                   </div>
                                 </td>
@@ -494,19 +550,17 @@ export default function AdminDashboard() {
                                     </button>
                                   </td>
                                 )}
-                                {activeTab === 'courses' && (
-                                  <td className="px-6 py-4">
-                                    <button
-                                      onClick={() => handleToggleAd(item)}
-                                      className={`p-2 rounded-lg transition-colors ${item.isAd ? 'text-blue-500 bg-blue-50' : 'text-gray-300 hover:bg-gray-100'}`}
-                                      title={item.isAd ? 'Remove AD Label' : 'Mark as AD'}
-                                    >
-                                      <Megaphone className={`w-5 h-5 ${item.isAd ? 'fill-current' : ''}`} />
-                                    </button>
-                                  </td>
-                                )}
                                 <td className="px-6 py-4">
                                   <div className="flex items-center justify-end gap-2">
+                                    {activeTab === 'events' && (
+                                      <button
+                                        onClick={() => handleViewParticipants(item)}
+                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                        title="View Participants"
+                                      >
+                                        <Users className="w-4 h-4" />
+                                      </button>
+                                    )}
                                     <button
                                       onClick={() => handleEditEntity(activeTab, item)}
                                       className="p-2 text-gray-400 hover:text-[#14627a] hover:bg-[#14627a]/10 rounded-lg transition-all"
@@ -546,6 +600,98 @@ export default function AdminDashboard() {
           </div>
         </main>
       </div>
+
+      {/* Participants Modal */}
+      <AnimatePresence>
+        {isParticipantsModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-[30px] p-8 max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-[#14627a]">Event Participants</h2>
+                  <p className="text-gray-500 text-sm">Registered users for: <span className="font-semibold text-gray-900">{selectedEvent?.title}</span></p>
+                </div>
+                <button
+                  onClick={() => setIsParticipantsModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <XCircle className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto min-h-[300px]">
+                {isParticipantsLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#14627a]" />
+                  </div>
+                ) : participants.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                    <Users className="w-12 h-12 mb-2 opacity-20" />
+                    <p>No participants registered yet.</p>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-100/50 border-b border-gray-100">
+                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
+                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Contact</th>
+                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Registered At</th>
+                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 bg-white">
+                        {participants.map((reg) => (
+                          <tr key={reg._id} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[#14627a]/10 flex items-center justify-center text-[#14627a] font-bold text-xs uppercase">
+                                  {reg.user?.firstName?.charAt(0) || 'U'}
+                                </div>
+                                <span className="text-sm font-bold text-gray-900">
+                                  {reg.user ? `${reg.user.firstName} ${reg.user.lastName}` : 'Deleted User'}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col">
+                                <span className="text-sm text-gray-900">{reg.user?.email}</span>
+                                <span className="text-xs text-gray-500">{reg.user?.phone || 'No phone'}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {new Date(reg.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="text-xs text-gray-500 italic max-w-xs truncate" title={reg.notes}>
+                                {reg.notes || 'No notes'}
+                              </p>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 flex justify-end">
+                <button
+                  onClick={() => setIsParticipantsModalOpen(false)}
+                  className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </div>

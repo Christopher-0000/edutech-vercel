@@ -13,7 +13,6 @@ const courseSchema = new mongoose.Schema({
   accessType: { type: String, enum: ['open', 'enrollment'], default: 'enrollment' },
   isActive: { type: Boolean, default: true },
   isFeatured: { type: Boolean, default: false },
-  isAd: { type: Boolean, default: false },
   enrollmentCount: { type: Number, default: 0 },
   level: { type: String, enum: ['beginner', 'intermediate', 'advanced', 'all'], default: 'all' }
 }, { timestamps: true, toJSON: { virtuals: true } });
@@ -53,7 +52,7 @@ courseSchema.methods.incrementEnrollment = async function () {
 
 courseSchema.statics.getFeatured = function () {
   return this.find({
-    $or: [{ isFeatured: true }, { isAd: true }],
+    isFeatured: true,
     isActive: true
   })
   .populate('category', 'name slug')
@@ -61,4 +60,4 @@ courseSchema.statics.getFeatured = function () {
   .limit(8);
 };
 
-module.exports = mongoose.model('Course', courseSchema);
+module.exports = mongoose.model('Course', courseSchema, 'courses');

@@ -26,6 +26,7 @@ exports.protect = async (req, res, next) => {
 
 // Admin middleware to restrict access to authorized roles
 exports.admin = (req, res, next) => {
+  console.log(`Admin check: ${req.user?.role} for ${req.originalUrl}`);
   if (req.user && (req.user.role === 'admin' || req.user.role === 'instructor')) {
     next();
   } else {

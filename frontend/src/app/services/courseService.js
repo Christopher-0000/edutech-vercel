@@ -9,7 +9,9 @@ const normalizeCourse = (course) => {
     image: course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600',
     isPaid: course.courseType === 'paid',
     price: course.price ?? 0,
-    category: course.category || 'General',
+    category: (typeof course.category === 'object' && course.category !== null)
+      ? (course.category.name || 'General')
+      : (course.category || 'General'),
     level: course.level
       ? course.level.charAt(0).toUpperCase() + course.level.slice(1)
       : 'All Levels',

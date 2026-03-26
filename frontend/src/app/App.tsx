@@ -19,6 +19,8 @@ const Login = lazy(() => import('./pages/Login.jsx'));
 const Signup = lazy(() => import('./pages/Signup.jsx'));
 const Apply = lazy(() => import('./pages/Apply.jsx'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard.jsx'));
+const EventEditor = lazy(() => import('./pages/EventEditor.jsx'));
+const CourseEditor = lazy(() => import('./pages/CourseEditor.jsx'));
 
 // Loading component
 const PageLoader = () => (
@@ -47,6 +49,10 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/apply" element={<Apply />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/events/new" element={<EventEditor />} />
+          <Route path="/admin/events/edit/:id" element={<EventEditor />} />
+          <Route path="/admin/courses/new" element={<CourseEditor />} />
+          <Route path="/admin/courses/edit/:id" element={<CourseEditor />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

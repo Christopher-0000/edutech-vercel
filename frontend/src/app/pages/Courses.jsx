@@ -35,7 +35,7 @@ function CourseCard({ course }) {
 
       <div className="p-6 flex flex-col flex-1">
         <span className="text-[#14627a] text-[10px] font-bold uppercase tracking-widest mb-2 block opacity-70">
-          {course.category}
+          {typeof course.category === 'object' ? course.category.name : course.category}
         </span>
         <h3 className="text-lg font-bold text-[#06213d] mb-2 leading-tight group-hover:text-[#14627a] transition-colors line-clamp-2">
           {course.title}
@@ -317,7 +317,8 @@ export default function Courses() {
       const q = searchTerm.toLowerCase();
       const matchesSearch = course.title.toLowerCase().includes(q) || course.description.toLowerCase().includes(q);
       const matchesPrice = (!paid && !free) || (paid && course.isPaid) || (free && !course.isPaid);
-      const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(course.category);
+      const catName = typeof course.category === 'object' ? course.category.name : course.category;
+      const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(catName);
       const matchesLevel = selectedLevels.length === 0 || selectedLevels.includes(course.level);
       return matchesSearch && matchesPrice && matchesCategory && matchesLevel;
     });

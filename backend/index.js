@@ -20,6 +20,7 @@ const siteSettingsRoutes = require('./routes/siteSettings');
 
 
 const app = express();
+console.log('>>> EDUTECH BACKEND STARTED: VERSION 2.1 (Enhanced Routing) <<<');
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -175,6 +176,15 @@ app.get('/', (req, res) => {
       adminPanel: '/admin-panel'
     }
   });
+});
+
+// DEBUG ROUTE - REMOVE AFTER VERIFICATION
+app.get('/api/debug-data', async (req, res) => {
+  const { Course, Event, Category } = require('./models');
+  const c = await Course.countDocuments();
+  const e = await Event.countDocuments();
+  const cat = await Category.countDocuments();
+  res.json({ courses: c, events: e, categories: cat, time: new Date().toISOString() });
 });
 
 app.use('/api/auth', authRoutes);

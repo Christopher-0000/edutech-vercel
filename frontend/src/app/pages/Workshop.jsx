@@ -96,7 +96,8 @@ function ArrowRightLine() {
   );
 }
 
-function EventCard({ month, day, title, time, location, bgColor, type }) {
+function EventCard({ id, _id, month, day, title, time, location, bgColor, type, onRegister }) {
+  const eventId = _id || id;
   return (
     <motion.div
       layout
@@ -106,6 +107,7 @@ function EventCard({ month, day, title, time, location, bgColor, type }) {
       exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
       whileHover={{ y: -10, transition: { duration: 0.2 } }}
       className={`${bgColor} w-full rounded-[25px] overflow-hidden shadow-lg cursor-pointer relative`}
+      onClick={() => onRegister(eventId, title)}
     >
       {/* Past event overlay badge */}
       {type === 'past' && (
@@ -142,15 +144,121 @@ function EventCard({ month, day, title, time, location, bgColor, type }) {
   );
 }
 
+function RegistrationModal({ isOpen, onClose, eventTitle, onSubmit, isSubmitting, initialData }) {
+  const [formData, setFormData] = useState({
+    firstName: initialData?.firstName || '',
+    lastName: initialData?.lastName || '',
+    email: initialData?.email || '',
+    phone: initialData?.phone || '',
+    notes: ''
+  });
+
+  useEffect(() => {
+    if (isOpen && initialData) {
+      setFormData({
+        firstName: initialData.firstName || '',
+        lastName: initialData.lastName || '',
+        email: initialData.email || '',
+        phone: initialData.phone || '',
+        notes: ''
+      });
+    }
+  }, [isOpen, initialData]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white rounded-[30px] p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-[#14627a]">Register for Event</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <p className="text-gray-600 mb-6 italic">Event: <span className="font-bold text-[#2e7e96]">{eventTitle}</span></p>
+
+        <form onSubmit={(e) => { e.preventDefault(); onSubmit(formData); }} className="space-y-6">
+          <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 mb-4">
+            <div className="flex items-center gap-3 text-sm text-[#14627a] font-medium">
+              <div className="w-8 h-8 rounded-full bg-[#14627a]/10 flex items-center justify-center">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-gray-500 text-xs uppercase font-bold tracking-wider">Registering as</p>
+                <p className="font-bold">{formData.firstName} {formData.lastName}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+              <svg className="w-4 h-4 text-[#14627a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Registration Notes
+            </label>
+            <textarea 
+              rows="4"
+              value={formData.notes}
+              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all resize-none text-gray-700"
+              placeholder="Tell us why you're interested or if you have any questions..."
+            />
+            <p className="text-[10px] text-gray-400 italic">These notes help us tailor the workshop to your needs.</p>
+          </div>
+
+          <div className="pt-2">
+            <button 
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-[#14627a] text-white py-4 rounded-2xl font-bold text-lg hover:bg-[#0f4a5b] transition-all disabled:opacity-50 shadow-lg flex items-center justify-center gap-2 group shadow-[#14627a]/20"
+            >
+              {isSubmitting ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>Confirm Registration</span>
+                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </>
+              )}
+            </button>
+            <p className="text-center text-[10px] text-gray-400 mt-4">
+              By registering, you agree to receive event-related communications at <span className="text-[#14627a] font-medium">{formData.email}</span>
+            </p>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function Workshop() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [registrationMessage, setRegistrationMessage] = useState('');
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
+    setCurrentUser(authService.getCurrentUser());
     const fetchEvents = async () => {
       try {
         setIsLoading(true);
@@ -168,17 +276,30 @@ export default function Workshop() {
     fetchEvents();
   }, []);
 
-  const handleRegisterClick = async () => {
+  const handleRegisterClick = (eventId, eventTitle) => {
     const user = authService.getCurrentUser();
     if (!user) {
       navigate('/login');
       return;
     }
     
-    // In a full implementation, you'd select a specific event to register for.
-    // Here we'll show a general registration success message or redirect to an apply flow.
-    setRegistrationMessage('Successfully registered interest for upcoming events!');
-    setTimeout(() => setRegistrationMessage(''), 3000);
+    setSelectedEvent({ id: eventId, title: eventTitle });
+    setIsModalOpen(true);
+  };
+
+  const handleModalSubmit = async (formData) => {
+    setIsSubmitting(true);
+    try {
+      await eventService.registerForEvent(selectedEvent.id, formData);
+      setRegistrationMessage(`Successfully registered for ${selectedEvent.title}!`);
+      setIsModalOpen(false);
+      setTimeout(() => setRegistrationMessage(''), 4000);
+    } catch (err) {
+      console.error('Registration error:', err);
+      alert(err.data?.error || err.message || 'Registration failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
@@ -291,7 +412,11 @@ export default function Workshop() {
               >
                 <AnimatePresence mode="popLayout">
                   {displayed.map((event) => (
-                    <EventCard key={event._id || event.id} {...event} />
+                    <EventCard 
+                      key={event._id || event.id} 
+                      {...event} 
+                      onRegister={handleRegisterClick}
+                    />
                   ))}
                 </AnimatePresence>
               </motion.div>
@@ -309,6 +434,15 @@ export default function Workshop() {
           )}
         </div>
       </div>
+
+      <RegistrationModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        eventTitle={selectedEvent?.title}
+        onSubmit={handleModalSubmit}
+        isSubmitting={isSubmitting}
+        initialData={currentUser}
+      />
 
       {/* ── CTA Section ── */}
       <motion.section 
