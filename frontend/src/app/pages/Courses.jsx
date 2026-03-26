@@ -291,7 +291,10 @@ export default function Courses() {
 
   useEffect(() => {
     const categoryParam = searchParams.get('category');
-    if (categoryParam) setSelectedCategories([categoryParam]);
+    setSelectedCategories(categoryParam ? [categoryParam] : []);
+    
+    const searchParam = searchParams.get('search');
+    setSearchTerm(searchParam || '');
   }, [searchParams]);
 
   const categories = useMemo(() => [...new Set(courses.map(c => c.category))], [courses]);

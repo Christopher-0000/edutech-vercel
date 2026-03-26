@@ -4,7 +4,8 @@ import {
   Users, BookOpen, Calendar, FileText, LayoutDashboard,
   Settings, LogOut, Search, Plus, MoreVertical,
   CheckCircle, XCircle, Clock, Trash2, Edit, ExternalLink,
-  BarChart3, TrendingUp, UserPlus, AlertCircle
+  BarChart3, TrendingUp, UserPlus, AlertCircle, Star, Save, Image as ImageIcon,
+  Megaphone
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import Header from '../components/ui/Header';
@@ -43,6 +44,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ users: 0, courses: 0, events: 0, blogs: 0 });
   const [users, setUsers] = useState([]);
   const [entities, setEntities] = useState([]);
+  const [siteSettings, setSiteSettings] = useState({ heroImages: [], featuredCourseIds: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
@@ -67,6 +69,9 @@ export default function AdminDashboard() {
       } else if (activeTab === 'users') {
         const usersData = await adminService.getUsers();
         setUsers(usersData);
+      } else if (activeTab === 'settings') {
+        const settingsData = await adminService.getSiteSettings();
+        setSiteSettings(settingsData || { heroImages: [], featuredCourseIds: [] });
       } else {
         const entitiesData = await adminService.getEntities(activeTab);
         setEntities(entitiesData);
@@ -105,16 +110,79 @@ export default function AdminDashboard() {
   const handleDeleteEntity = async (type, id) => {
     if (window.confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) {
       try {
-        // We'll use the specific services for following logic or add generic delete to adminService
-        // For now, let's assume we use adminService delete if we implement it, 
-        // but we can also use the existing services.
-        // I'll add a generic delete to adminService.
         await adminService.deleteEntity(type, id);
         setEntities(entities.filter(e => (e._id || e.id) !== id));
       } catch (error) {
         alert(`Failed to delete ${type.slice(0, -1)}`);
       }
     }
+  };
+
+  const handleToggleFeatured = async (course) => {
+    try {
+      // Toggle logic using isFeatured
+      const newStatus = !course.isFeatured;
+      await adminService.updateEntity('courses', course._id || course.id, {
+        isFeatured: newStatus
+      });
+      setEntities(entities.map(e =>
+        (e._id === course._id || e.id === course.id) ? { ...e, isFeatured: newStatus } : e
+      ));
+    } catch (error) {
+      console.error('Failed to update featured status:', error);
+      alert('Failed to update featured status');
+    }
+  };
+
+  const handleToggleAd = async (course) => {
+    try {
+      const newStatus = !course.isAd;
+      await adminService.updateEntity('courses', course._id || course.id, {
+        isAd: newStatus
+      });
+      setEntities(entities.map(e =>
+        (e._id === course._id || e.id === course.id) ? { ...e, isAd: newStatus } : e
+      ));
+    } catch (error) {
+      console.error('Failed to update AD status:', error);
+      alert('Failed to update AD status');
+    }
+  };
+
+  const handleUpdateSettings = async (e) => {
+    e && e.preventDefault();
+    try {
+      await adminService.updateSiteSettings(siteSettings);
+      alert('Settings updated successfully');
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+      alert('Failed to update settings');
+    }
+  };
+
+  const [uploadingIndex, setUploadingIndex] = useState(null);
+
+  const handleFileUpload = async (index, file) => {
+    if (!file) return;
+    
+    setUploadingIndex(index);
+    try {
+      const response = await adminService.uploadImage(file);
+      if (response.success) {
+        handleHeroImageChange(index, response.filepath);
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingIndex(null);
+    }
+  };
+
+  const handleHeroImageChange = (index, value) => {
+    const newImages = [...(siteSettings.heroImages || [])];
+    newImages[index] = value;
+    setSiteSettings({ ...siteSettings, heroImages: newImages });
   };
 
   const handleEditEntity = (type, item) => {
@@ -177,7 +245,12 @@ export default function AdminDashboard() {
           </nav>
 
           <div className="mt-auto pt-6 border-t border-gray-100">
-            <SidebarItem icon={Settings} label="Settings" />
+            <SidebarItem
+              icon={Settings}
+              label="Settings"
+              active={activeTab === 'settings'}
+              onClick={() => setActiveTab('settings')}
+            />
             <button
               onClick={() => authService.logout().then(() => navigate('/login'))}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-all mt-2"
@@ -237,7 +310,79 @@ export default function AdminDashboard() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {activeTab === 'overview' ? (
+                  {activeTab === 'settings' ? (
+                    <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm max-w-4xl mx-auto">
+                      <div className="mb-8 border-b border-gray-100 pb-6">
+                        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                          <ImageIcon className="w-6 h-6 text-[#14627a]" /> Hero Section Configuration
+                        </h3>
+                        <p className="text-gray-500 text-sm mt-1">Update the primary visuals seen by all visitors on the landing page.</p>
+                      </div>
+
+                      <div className="space-y-8">
+                        {[0, 1].map((index) => (
+                          <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Hero Image {index + 1} URL</label>
+                                <label className="cursor-pointer bg-[#14627a]/10 text-[#14627a] hover:bg-[#14627a]/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors">
+                                  {uploadingIndex === index ? (
+                                    <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-[#14627a]" />
+                                  ) : (
+                                    <Save className="w-3 h-3" />
+                                  )}
+                                  Upload from Machine
+                                  <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => handleFileUpload(index, e.target.files[0])}
+                                    disabled={uploadingIndex !== null}
+                                  />
+                                </label>
+                              </div>
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                  type="text"
+                                  value={(siteSettings?.heroImages?.[index]) || ''}
+                                  onChange={(e) => handleHeroImageChange(index, e.target.value)}
+                                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 outline-none text-sm"
+                                  placeholder="https://images.unsplash.com/..."
+                                />
+                              </div>
+                              <p className="text-[10px] text-gray-400 italic">Recommended size: 500x500 pixels (Square)</p>
+                            </div>
+                            <div className="relative group border-2 border-dashed border-gray-100 rounded-2xl overflow-hidden aspect-video bg-gray-50">
+                              {uploadingIndex === index ? (
+                                <div className="absolute inset-0 z-20 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#14627a]" />
+                                  <span className="text-xs font-bold text-[#14627a] animate-pulse">Uploading to Cloudinary...</span>
+                                </div>
+                              ) : null}
+                              {siteSettings?.heroImages?.[index] ? (
+                                <img src={siteSettings.heroImages[index]} alt={`Hero ${index + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                              ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                                  <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
+                                  <span className="text-xs font-medium">No preview available</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-12 flex justify-end pt-8 border-t border-gray-50">
+                        <button
+                          onClick={handleUpdateSettings}
+                          className="flex items-center gap-2 bg-[#14627a] text-white px-10 py-4 rounded-xl font-bold hover:bg-[#0f4a5b] transition-all shadow-lg hover:shadow-[#14627a]/25 transform active:scale-95"
+                        >
+                          <Save className="w-5 h-5" /> Save Platform Settings
+                        </button>
+                      </div>
+                    </div>
+                  ) : activeTab === 'overview' ? (
                     <div className="space-y-8">
                       {/* Stats Grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -296,9 +441,11 @@ export default function AdminDashboard() {
                                 {activeTab === 'users' ? 'User' : 'Title'}
                               </th>
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                {activeTab === 'users' ? 'Role' : 'Author/Instructor'}
+                                {activeTab === 'users' ? 'Role' : 'Category / Author'}
                               </th>
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                              {activeTab === 'courses' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Featured</th>}
+                              {activeTab === 'courses' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">AD</th>}
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                           </thead>
@@ -320,7 +467,12 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="px-6 py-4">
                                   <span className="text-sm font-medium text-gray-600 capitalize">
-                                    {activeTab === 'users' ? (item.role || 'User') : (item.author?.firstName || item.instructor?.firstName || 'System')}
+                                    {activeTab === 'users' ? (item.role || 'User') : (
+                                      <div className="flex flex-col">
+                                        <span className="text-gray-900 font-medium">{(activeTab === 'courses' ? item.category?.name : '') || ''}</span>
+                                        <span className="text-xs text-gray-500">{item.author?.firstName || item.instructor?.firstName || 'System'}</span>
+                                      </div>
+                                    )}
                                   </span>
                                 </td>
                                 <td className="px-6 py-4">
@@ -331,6 +483,28 @@ export default function AdminDashboard() {
                                     </span>
                                   </div>
                                 </td>
+                                {activeTab === 'courses' && (
+                                  <td className="px-6 py-4">
+                                    <button
+                                      onClick={() => handleToggleFeatured(item)}
+                                      className={`p-2 rounded-lg transition-colors ${item.isFeatured ? 'text-yellow-500 bg-yellow-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                                      title={item.isFeatured ? 'Remove from Home' : 'Feature on Home'}
+                                    >
+                                      <Star className={`w-5 h-5 ${item.isFeatured ? 'fill-current' : ''}`} />
+                                    </button>
+                                  </td>
+                                )}
+                                {activeTab === 'courses' && (
+                                  <td className="px-6 py-4">
+                                    <button
+                                      onClick={() => handleToggleAd(item)}
+                                      className={`p-2 rounded-lg transition-colors ${item.isAd ? 'text-blue-500 bg-blue-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                                      title={item.isAd ? 'Remove AD Label' : 'Mark as AD'}
+                                    >
+                                      <Megaphone className={`w-5 h-5 ${item.isAd ? 'fill-current' : ''}`} />
+                                    </button>
+                                  </td>
+                                )}
                                 <td className="px-6 py-4">
                                   <div className="flex items-center justify-end gap-2">
                                     <button

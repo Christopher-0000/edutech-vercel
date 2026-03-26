@@ -41,7 +41,7 @@ function CarouselControls({ page, pageCount, onPrev, onNext, onGoTo }) {
         <motion.button
           onClick={onNext}
           aria-label="Next"
-          className="bg-[#14627a] p-2.5 rounded-lg shadow-[-4px_4px_20px_0px_rgba(32,180,134,0.12)]"
+          className="bg-[#14627a] p-2.5 rounded-lg shadow-[0_10px_20px_rgba(20,98,122,0.2)]"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
         >
@@ -98,9 +98,9 @@ export default function PopularCoursesSection({ courses }) {
             </h2>
           </motion.div>
 
-          <div className="flex-1 w-full overflow-hidden relative">
+          <div className="flex-1 w-full overflow-hidden relative -m-10 p-10">
             <motion.div
-              className="flex gap-6 pb-4"
+              className="flex gap-6"
               style={{ x: -page * ITEM_WIDTH }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               initial={false}

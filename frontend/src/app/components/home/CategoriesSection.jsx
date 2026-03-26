@@ -4,23 +4,25 @@ import { useState, useEffect } from "react";
 import { ArrowUpRightIcon } from "../ui/Icons";
 import { courseService } from "../../services/courseService";
 
+
 // Map category name → Bootstrap icon class
 const CATEGORY_ICONS = {
-  "Design":       "bi-palette",
-  "Development":  "bi-code-slash",
-  "Marketing":    "bi-graph-up",
-  "Business":     "bi-briefcase",
+  "Design": "bi-palette",
+  "Development": "bi-code-slash",
+  "Marketing": "bi-graph-up",
+  "Business": "bi-briefcase",
   "Data Science": "bi-bar-chart",
-  "Lifestyle":    "bi-stars",
-  "Photography":  "bi-camera",
-  "Music":        "bi-music-note",
+  "Lifestyle": "bi-stars",
+  "Photography": "bi-camera",
+  "Music": "bi-music-note",
 };
+
 const DEFAULT_ICON = "bi-bookmark";
 
 export default function CategoriesSection() {
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;

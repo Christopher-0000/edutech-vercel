@@ -75,6 +75,57 @@ export const adminService = {
       console.error(`Error deleting admin entity (${type}):`, error);
       throw error;
     }
+  },
+
+  /**
+   * Updates an entity of a specific type.
+   */
+  updateEntity: async (type, id, data) => {
+    try {
+      return await api.put(`/admin/entities/${type}/${id}`, data);
+    } catch (error) {
+      console.error(`Error updating admin entity (${type}):`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Fetches the landing page settings.
+   */
+  getSiteSettings: async () => {
+    try {
+      return await api.get('/settings');
+    } catch (error) {
+      console.error('Error fetching site settings:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Updates the landing page settings.
+   */
+  updateSiteSettings: async (settingsData) => {
+    try {
+      return await api.put('/settings', settingsData);
+    } catch (error) {
+      console.error('Error updating site settings:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Uploads an image to Cloudinary.
+   */
+  uploadImage: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      // The backend defines /api/upload, and our base URL is /api
+      return await api.post('/upload', formData);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
   }
 };
 

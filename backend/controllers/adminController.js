@@ -74,7 +74,7 @@ exports.getEntities = asyncHandler(async (req, res) => {
 
   switch (type) {
     case 'courses':
-      data = await Course.find().populate('instructor', 'firstName lastName').sort({ createdAt: -1 });
+      data = await Course.find().populate('instructor', 'firstName lastName').populate('category', 'name').sort({ createdAt: -1 });
       break;
     case 'events':
       data = await Event.find().sort({ date: -1 });
@@ -111,4 +111,27 @@ exports.deleteEntity = asyncHandler(async (req, res) => {
 
   await item.deleteOne();
   res.json({ success: true, message: `${type.slice(0, -1)} deleted successfully` });
+});
+
+// @desc    Update an entity by type
+// @route   PUT /api/admin/entities/:type/:id
+// @access  Private/Admin
+exports.updateEntity = asyncHandler(async (req, res) => {
+  const { type, id } = req.params;
+  let model;
+
+  switch (type) {
+    case 'courses': model = Course; break;
+    case 'events': model = Event; break;
+    case 'blogs': model = BlogPost; break;
+    default:
+      return res.status(400).json({ success: false, error: 'Invalid entity type' });
+  }
+
+  const item = await model.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+  if (!item) {
+    return res.status(404).json({ success: false, error: 'Item not found' });
+  }
+
+  res.json({ success: true, data: item });
 });

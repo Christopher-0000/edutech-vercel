@@ -12,7 +12,7 @@ function ArrowUpRightIcon({ color = "#6D737A" }) {
 }
 
 export default function CourseCard({ course, index, highlighted = false }) {
-  const { id, title, category, price, rating, reviews, image } = course;
+  const { id, title, category, price, rating, reviews, image, isAd } = course;
   return (
     <motion.div
       className="flex-shrink-0 w-[320px]"
@@ -23,15 +23,19 @@ export default function CourseCard({ course, index, highlighted = false }) {
     >
       <Link to={`/course/${id}`} className="block h-full" aria-label={`View ${title}`}>
         <motion.article
-          className="bg-white rounded-2xl overflow-hidden h-full"
-          style={{ boxShadow: "0px 3px 12px 0px rgba(75,75,75,0.08)" }}
-          whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
+          className="bg-white rounded-2xl overflow-hidden h-full shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-100"
+          whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(20,98,122,0.12)" }}
           transition={{ duration: 0.3 }}
         >
           <div className="relative h-52 overflow-hidden">
             <img src={image} alt={title} className="w-full h-full object-cover" loading="lazy" />
+            {isAd && (
+              <span className="absolute top-4 right-4 bg-[#14627a] text-white px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase shadow-md z-10 border border-white/20">
+                AD
+              </span>
+            )}
             <span className="absolute top-4 left-4 bg-white px-3 py-1.5 rounded-md text-sm font-medium text-[#1b1d1f] shadow-sm">
-              {category}
+              {category?.name || category}
             </span>
           </div>
 
@@ -49,8 +53,8 @@ export default function CourseCard({ course, index, highlighted = false }) {
               </span>
               <motion.div
                 className={`p-2.5 rounded-lg ${highlighted
-                  ? "bg-[#14627a] shadow-[-4px_4px_20px_0px_rgba(32,180,134,0.12)]"
-                  : "bg-white shadow-[0px_3px_12px_0px_rgba(75,75,75,0.08)]"
+                  ? "bg-[#14627a] shadow-[0_8px_16px_rgba(20,98,122,0.2)]"
+                  : "bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-gray-100"
                   }`}
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 whileTap={{ scale: 0.9 }}
