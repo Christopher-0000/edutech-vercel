@@ -56,6 +56,19 @@ export default function AdminDashboard() {
   const [editingInstructor, setEditingInstructor] = useState(null);
   const [newInstructor, setNewInstructor] = useState({ name: '', studyArea: '', img: '' });
 
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userFormData, setUserFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    username: '',
+    phone: '',
+    role: 'student',
+    password: '',
+    isActive: true
+  });
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -105,7 +118,73 @@ export default function AdminDashboard() {
       await adminService.updateUser(userId, { role: newRole });
       setUsers(users.map(u => u._id === userId ? { ...u, role: newRole } : u));
     } catch (error) {
+      console.error('Failed to update user role:', error);
       alert('Failed to update user role');
+    }
+  };
+
+  const handleStatusToggle = async (userId, currentStatus) => {
+    try {
+      const newStatus = !currentStatus;
+      await adminService.updateUser(userId, { isActive: newStatus });
+      setUsers(users.map(u => u._id === userId ? { ...u, isActive: newStatus } : u));
+    } catch (error) {
+      console.error('Failed to update user status:', error);
+      alert('Failed to update account status');
+    }
+  };
+
+  const handleOpenUserModal = (user = null) => {
+    if (user) {
+      setEditingUser(user);
+      setUserFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        username: user.username || '',
+        phone: user.phone || '',
+        role: user.role || 'student',
+        password: '',
+        isActive: user.isActive !== false
+      });
+    } else {
+      setEditingUser(null);
+      setUserFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        username: '',
+        phone: '',
+        role: 'student',
+        password: '',
+        isActive: true
+      });
+    }
+    setIsUserModalOpen(true);
+  };
+
+  const handleSaveUser = async (e) => {
+    e && e.preventDefault();
+    try {
+      const data = { ...userFormData };
+      // Generate username if empty for new user
+      if (!editingUser && !data.username) {
+        data.username = data.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random() * 1000);
+      }
+      
+      if (editingUser) {
+        // Only include password if it was changed
+        if (!data.password) delete data.password;
+        await adminService.updateUser(editingUser._id, data);
+      } else {
+        await adminService.createUser(data);
+      }
+      
+      setIsUserModalOpen(false);
+      fetchInitialData();
+    } catch (error) {
+      console.error('Failed to save user:', error);
+      alert('Failed to save user: ' + (error.data?.error || error.message));
     }
   };
 
@@ -212,6 +291,8 @@ export default function AdminDashboard() {
       if (newName && newName !== item.name) {
         handleUpdateCategory(id, newName);
       }
+    } else if (type === 'users') {
+      handleOpenUserModal(item);
     } else {
       alert(`Editing ${type} is not implemented yet.`);
     }
@@ -390,6 +471,9 @@ export default function AdminDashboard() {
                       }
                       else if (activeTab === 'instructors') {
                         setIsAddingInstructor(!isAddingInstructor);
+                      }
+                      else if (activeTab === 'users') {
+                        handleOpenUserModal();
                       }
                       else alert(`Creating ${activeTab} is not implemented yet.`);
                     }}
@@ -673,18 +757,7 @@ export default function AdminDashboard() {
                       </div>
 
                       {/* Middle Section */}
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-[#14627a]" /> Platform Growth
-                          </h3>
-                          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                            <p className="text-gray-400 italic">Analytical data visualization pending...</p>
-                          </div>
-                        </div>
 
-
-                      </div>
                     </div>
                   ) : (
                     /* Table View for Users/Blogs/Courses/Events */
@@ -700,6 +773,7 @@ export default function AdminDashboard() {
                                 {activeTab === 'users' ? 'Role' : activeTab === 'instructors' ? 'Study Area' : 'Category / Author'}
                               </th>
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                              {activeTab === 'events' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Location</th>}
                               {activeTab === 'courses' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Featured</th>}
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                             </tr>
@@ -729,16 +803,31 @@ export default function AdminDashboard() {
                                     </div>
                                     <div>
                                       <p className="text-sm font-bold text-gray-900 line-clamp-1">
-                                      {activeTab === 'users' ? `${item.firstName} ${item.lastName}` : (item.title || item.name || 'Unnamed')}
+                                        {activeTab === 'users' ? `${item.firstName} ${item.lastName}` : (item.title || item.name || 'Unnamed')}
                                       </p>
-                                      {activeTab === 'users' && <p className="text-xs text-gray-500">{item.email}</p>}
+                                      {activeTab === 'users' && (
+                                        <div className="flex flex-col gap-0.5 mt-0.5">
+                                          <p className="text-xs text-gray-500">{item.email}</p>
+                                          <p className="text-[10px] text-gray-400 font-medium">{item.phone || 'No phone'}</p>
+                                        </div>
+                                      )}
                                       {activeTab === 'categories' && <p className="text-xs text-gray-500">slug: {item.slug}</p>}
                                     </div>
                                   </div>
                                 </td>
                                 <td className="px-6 py-4">
                                   <span className="text-sm font-medium text-gray-600 capitalize">
-                                    {activeTab === 'users' ? (item.role || 'User') : activeTab === 'instructors' ? (item.studyArea || 'General') : (
+                                    {activeTab === 'users' ? (
+                                      <select
+                                        value={item.role || 'student'}
+                                        onChange={(e) => handleRoleUpdate(item._id, e.target.value)}
+                                        className="bg-gray-50 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg focus:ring-[#14627a] focus:border-[#14627a] block w-full p-2 outline-none cursor-pointer hover:bg-white transition-colors"
+                                      >
+                                        <option value="student">Student</option>
+                                        <option value="instructor">Instructor</option>
+                                        <option value="admin">Admin</option>
+                                      </select>
+                                    ) : activeTab === 'instructors' ? (item.studyArea || 'General') : (
                                       <div className="flex flex-col">
                                         <span className="text-gray-900 font-medium">{(activeTab === 'courses' ? item.category?.name : '') || ''}</span>
                                         <span className="text-xs text-gray-500">{item.author?.firstName || item.instructor?.firstName || 'System'}</span>
@@ -747,13 +836,23 @@ export default function AdminDashboard() {
                                   </span>
                                 </td>
                                 <td className="px-6 py-4">
-                                  <div className="flex items-center gap-2">
+                                  <div
+                                    className={`flex items-center gap-2 group/status px-3 py-1.5 rounded-full w-fit transition-all ${activeTab === 'users' ? 'cursor-pointer hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-100' : ''}`}
+                                    onClick={() => activeTab === 'users' && handleStatusToggle(item._id, item.isActive !== false)}
+                                  >
                                     <div className={`w-2 h-2 rounded-full ${(item.isActive !== false && item.status !== 'Draft') ? 'bg-green-500' : 'bg-red-500'}`} />
-                                    <span className="text-sm font-medium text-gray-700">
-                                      {item.status || (item.isActive !== false ? 'Active' : 'Inactive')}
+                                    <span className={`text-xs font-bold ${activeTab === 'users' ? 'text-gray-600 group-hover/status:text-[#14627a]' : 'text-gray-700'}`}>
+                                      {item.status || (item.isActive !== false ? 'Active' : 'Suspended')}
                                     </span>
                                   </div>
                                 </td>
+                                {activeTab === 'events' && (
+                                  <td className="px-6 py-4">
+                                    <span className="text-sm text-gray-500 italic">
+                                      {item.address || 'Online'}
+                                    </span>
+                                  </td>
+                                )}
                                 {activeTab === 'courses' && (
                                   <td className="px-6 py-4">
                                     <button
@@ -902,6 +1001,131 @@ export default function AdminDashboard() {
                 >
                   Close
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* User Edit/Add Modal */}
+      <AnimatePresence>
+        {isUserModalOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              className="bg-white rounded-[32px] p-8 max-w-2xl w-full shadow-2xl relative overflow-hidden"
+            >
+              {/* Decorative Background */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#14627a]/5 rounded-bl-full -z-0" />
+              
+              <div className="relative z-10">
+                <div className="flex justify-between items-center mb-10">
+                  <div>
+                    <h2 className="text-3xl font-extrabold text-gray-900">
+                      {editingUser ? 'Edit' : 'Create'} <span className="text-[#14627a]">User</span>
+                    </h2>
+                    <p className="text-gray-500 mt-1">Fill in the details below to {editingUser ? 'update' : 'add'} an account.</p>
+                  </div>
+                  <button onClick={() => setIsUserModalOpen(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-all">
+                    <XCircle className="w-6 h-6 text-gray-400" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveUser} className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700 ml-1">First Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={userFormData.firstName}
+                        onChange={(e) => setUserFormData({ ...userFormData, firstName: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all"
+                        placeholder="e.g. John"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700 ml-1">Last Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={userFormData.lastName}
+                        onChange={(e) => setUserFormData({ ...userFormData, lastName: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all"
+                        placeholder="e.g. Doe"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700 ml-1">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={userFormData.email}
+                      onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all"
+                      placeholder="john.doe@example.com"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700 ml-1">Phone Number</label>
+                      <input
+                        type="tel"
+                        value={userFormData.phone}
+                        onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all"
+                        placeholder="+1 (555) 000-0000"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700 ml-1">Account Role</label>
+                      <select
+                        value={userFormData.role}
+                        onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all cursor-pointer"
+                      >
+                        <option value="student">Student</option>
+                        <option value="instructor">Instructor</option>
+                        <option value="admin">Administrator</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700 ml-1">
+                      {editingUser ? 'New Password (Optional)' : 'Password'}
+                    </label>
+                    <input
+                      type="password"
+                      required={!editingUser}
+                      value={userFormData.password}
+                      onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all"
+                      placeholder={editingUser ? "Leave empty to keep current" : "Minimum 6 characters"}
+                    />
+                  </div>
+
+                  <div className="pt-6 flex justify-end gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsUserModalOpen(false)}
+                      className="px-6 py-3 font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-[#14627a] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#0f4a5b] transition-all shadow-lg hover:shadow-[#14627a]/25 flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" /> {editingUser ? 'Update User' : 'Create Account'}
+                    </button>
+                  </div>
+                </form>
               </div>
             </motion.div>
           </div>

@@ -34,22 +34,25 @@ exports.getUsers = asyncHandler(async (req, res) => {
   res.json({ success: true, count: users.length, users });
 });
 
-// @desc    Update user role or status
+// @desc    Update user
 // @route   PUT /api/admin/users/:id
 // @access  Private/Admin
 exports.updateUser = asyncHandler(async (req, res) => {
-  const { role, isActive } = req.body;
-  const user = await User.findById(req.params.id);
+  const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
 
   if (!user) {
     return res.status(404).json({ success: false, error: 'User not found' });
   }
 
-  if (role) user.role = role;
-  if (isActive !== undefined) user.isActive = isActive;
-
-  await user.save();
   res.json({ success: true, user });
+});
+
+// @desc    Create user
+// @route   POST /api/admin/users
+// @access  Private/Admin
+exports.createUser = asyncHandler(async (req, res) => {
+  const user = await User.create(req.body);
+  res.status(201).json({ success: true, user });
 });
 
 // @desc    Delete user
