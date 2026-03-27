@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { motion } from "motion/react";
+import { useNavigate } from "react-router-dom";
+
 
 const picsum = (seed, w, h) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
 
@@ -17,7 +20,24 @@ function DecorCircle({ color, size, style }) {
   );
 }
 
-export default function HeroSection() {
+export default function HeroSection({ images }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/courses?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate("/courses");
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   return (
     <section className="bg-[#fffaf5] relative overflow-hidden" aria-label="Hero">
       <DecorCircle color="#ED4459" size={10} style={{ left: 34, top: 20 }} />
@@ -34,12 +54,7 @@ export default function HeroSection() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <motion.span
-              className="inline-block bg-white px-6 py-3 rounded-full text-sm font-semibold text-[#14627a] shadow-sm tracking-widest"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-            >
-              START TO SUCCESS
-            </motion.span>
+
 
             <motion.h1
               className="text-[40px] sm:text-[48px] lg:text-[56px] font-semibold leading-tight"
@@ -51,9 +66,9 @@ export default function HeroSection() {
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                
+
                 5,000+
-                
+
               </motion.span>{" "}
               Courses
               <br />from <span className="text-[#14627a]">300</span> Instructors
@@ -76,9 +91,13 @@ export default function HeroSection() {
                 id="hero-search"
                 type="search"
                 placeholder="What do you want to learn?"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
                 className="flex-1 px-6 py-4 rounded-lg text-[16px] text-[#6d737a] bg-white focus:outline-none focus:ring-2 focus:ring-[#14627a] shadow-sm"
               />
               <motion.button
+                onClick={handleSearch}
                 className="bg-[#14627a] text-white px-8 py-4 rounded-lg text-[16px] font-medium flex items-center justify-center gap-2"
                 whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(20,98,122,0.3)" }}
                 whileTap={{ scale: 0.95 }}
@@ -98,7 +117,7 @@ export default function HeroSection() {
             aria-hidden="true"
           >
             <motion.img
-              src={HERO_IMAGES.hero1}
+              src={(images && images[0]) ? images[0] : HERO_IMAGES.hero1}
               alt=""
               className="absolute rounded-lg shadow-2xl w-[50%] -rotate-5 z-10"
               style={{ left: "0%", top: "0%" }}
@@ -106,7 +125,7 @@ export default function HeroSection() {
               transition={{ duration: 0.3 }}
             />
             <motion.img
-              src={HERO_IMAGES.hero2}
+              src={(images && images[1]) ? images[1] : HERO_IMAGES.hero2}
               alt=""
               className="absolute rounded-lg shadow-2xl w-[48%] rotate-4 z-20"
               style={{ right: "0%", top: "5%" }}

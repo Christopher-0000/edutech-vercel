@@ -16,8 +16,11 @@ const eventRoutes = require('./routes/eventRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const siteSettingsRoutes = require('./routes/siteSettings');
+
 
 const app = express();
+console.log('>>> EDUTECH BACKEND STARTED: VERSION 2.1 (Enhanced Routing) <<<');
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -175,12 +178,23 @@ app.get('/', (req, res) => {
   });
 });
 
+// DEBUG ROUTE - REMOVE AFTER VERIFICATION
+app.get('/api/debug-data', async (req, res) => {
+  const { Course, Event, Category } = require('./models');
+  const c = await Course.countDocuments();
+  const e = await Event.countDocuments();
+  const cat = await Category.countDocuments();
+  res.json({ courses: c, events: e, categories: cat, time: new Date().toISOString() });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/settings', siteSettingsRoutes);
+
 
 // Error handler
 app.use((err, req, res, next) => {

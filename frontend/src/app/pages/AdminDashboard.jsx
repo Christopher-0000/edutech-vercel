@@ -4,7 +4,8 @@ import {
   Users, BookOpen, Calendar, FileText, LayoutDashboard,
   Settings, LogOut, Search, Plus, MoreVertical,
   CheckCircle, XCircle, Clock, Trash2, Edit, ExternalLink,
-  BarChart3, TrendingUp, UserPlus, AlertCircle
+  BarChart3, TrendingUp, UserPlus, AlertCircle, Star, Save, Image as ImageIcon,
+  Tag
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import Header from '../components/ui/Header';
@@ -43,8 +44,15 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ users: 0, courses: 0, events: 0, blogs: 0 });
   const [users, setUsers] = useState([]);
   const [entities, setEntities] = useState([]);
+  const [siteSettings, setSiteSettings] = useState({ heroImages: [], featuredCourseIds: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
+  const [participants, setParticipants] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isParticipantsLoading, setIsParticipantsLoading] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,9 +75,16 @@ export default function AdminDashboard() {
       } else if (activeTab === 'users') {
         const usersData = await adminService.getUsers();
         setUsers(usersData);
+      } else if (activeTab === 'settings') {
+        const settingsData = await adminService.getSiteSettings();
+        setSiteSettings(settingsData || { heroImages: [], featuredCourseIds: [] });
       } else {
-        const entitiesData = await adminService.getEntities(activeTab);
-        setEntities(entitiesData);
+        const url = `/admin/entities/list/${activeTab}`;
+        // window.alert(`Fetching URL: http://localhost:5000/api${url}`); // Uncomment if needed, but console.log is safer
+        console.log(`[AdminDashboard] Fetching entities for tab: ${activeTab} from ${url}`);
+        const response = await adminService.getEntities(activeTab, true);
+        console.log(`[AdminDashboard] Response for ${activeTab}:`, response);
+        setEntities(response.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch admin data:', error);
@@ -105,10 +120,6 @@ export default function AdminDashboard() {
   const handleDeleteEntity = async (type, id) => {
     if (window.confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) {
       try {
-        // We'll use the specific services for following logic or add generic delete to adminService
-        // For now, let's assume we use adminService delete if we implement it, 
-        // but we can also use the existing services.
-        // I'll add a generic delete to adminService.
         await adminService.deleteEntity(type, id);
         setEntities(entities.filter(e => (e._id || e.id) !== id));
       } catch (error) {
@@ -117,13 +128,108 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleToggleFeatured = async (course) => {
+    try {
+      // Toggle logic using isFeatured
+      const newStatus = !course.isFeatured;
+      await adminService.updateEntity('courses', course._id || course.id, {
+        isFeatured: newStatus
+      });
+      setEntities(entities.map(e =>
+        (e._id === course._id || e.id === course.id) ? { ...e, isFeatured: newStatus } : e
+      ));
+    } catch (error) {
+      console.error('Failed to update featured status:', error);
+      alert('Failed to update featured status');
+    }
+  };
+
+  const handleUpdateSettings = async (e) => {
+    e && e.preventDefault();
+    try {
+      await adminService.updateSiteSettings(siteSettings);
+      alert('Settings updated successfully');
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+      alert('Failed to update settings');
+    }
+  };
+
+  const [uploadingIndex, setUploadingIndex] = useState(null);
+
+  const handleFileUpload = async (index, file) => {
+    if (!file) return;
+
+    setUploadingIndex(index);
+    try {
+      const response = await adminService.uploadImage(file);
+      if (response.success) {
+        handleHeroImageChange(index, response.filepath);
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingIndex(null);
+    }
+  };
+
+  const handleHeroImageChange = (index, value) => {
+    const newImages = [...(siteSettings.heroImages || [])];
+    newImages[index] = value;
+    setSiteSettings({ ...siteSettings, heroImages: newImages });
+  };
+
   const handleEditEntity = (type, item) => {
     const id = item._id || item.id;
     if (type === 'blogs') {
       navigate(`/blog/editor/${id}`);
+    } else if (type === 'events') {
+      navigate(`/admin/events/edit/${id}`);
+    } else if (type === 'courses') {
+      navigate(`/admin/courses/edit/${id}`);
+    } else if (type === 'categories') {
+      const newName = prompt('Enter new category name:', item.name);
+      if (newName && newName !== item.name) {
+        handleUpdateCategory(id, newName);
+      }
     } else {
-      // For now, these might not have specialized editors yet, so we'll just alert
-      alert(`Editing ${type} is not implemented yet in this UI. Please use the specialized editor if available.`);
+      alert(`Editing ${type} is not implemented yet.`);
+    }
+  };
+
+  const handleCreateCategory = async (name) => {
+    try {
+      await adminService.createEntity('categories', { name });
+      fetchInitialData();
+    } catch (error) {
+      console.error('Failed to create category:', error);
+      alert('Failed to create category: ' + (error.response?.data?.error || error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleUpdateCategory = async (id, name) => {
+    try {
+      await adminService.updateEntity('categories', id, { name });
+      fetchInitialData();
+    } catch (error) {
+      console.error('Failed to update category:', error);
+      alert('Failed to update category: ' + (error.response?.data?.error || error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleViewParticipants = async (event) => {
+    setSelectedEvent(event);
+    setIsParticipantsModalOpen(true);
+    setIsParticipantsLoading(true);
+    try {
+      const data = await adminService.getEventParticipants(event._id || event.id);
+      setParticipants(data);
+    } catch (error) {
+      console.error('Failed to fetch participants:', error);
+      alert('Failed to load participants');
+    } finally {
+      setIsParticipantsLoading(false);
     }
   };
 
@@ -174,10 +280,21 @@ export default function AdminDashboard() {
               active={activeTab === 'blogs'}
               onClick={() => setActiveTab('blogs')}
             />
+            <SidebarItem
+              icon={Tag}
+              label="Categories"
+              active={activeTab === 'categories'}
+              onClick={() => setActiveTab('categories')}
+            />
           </nav>
 
           <div className="mt-auto pt-6 border-t border-gray-100">
-            <SidebarItem icon={Settings} label="Settings" />
+            <SidebarItem
+              icon={Settings}
+              label="Settings"
+              active={activeTab === 'settings'}
+              onClick={() => setActiveTab('settings')}
+            />
             <button
               onClick={() => authService.logout().then(() => navigate('/login'))}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-all mt-2"
@@ -210,7 +327,19 @@ export default function AdminDashboard() {
                       className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] w-full sm:w-64"
                     />
                   </div>
-                  <button className="bg-[#14627a] text-white p-2 rounded-lg hover:bg-[#0f4a5b] transition-colors shadow-sm">
+                  <button
+                    onClick={() => {
+                      if (activeTab === 'events') navigate('/admin/events/new');
+                      else if (activeTab === 'blogs') navigate('/blog/editor');
+                      else if (activeTab === 'courses') navigate('/admin/courses/new');
+                      else if (activeTab === 'categories') {
+                        const name = prompt('Enter new category name:');
+                        if (name) handleCreateCategory(name);
+                      }
+                      else alert(`Creating ${activeTab} is not implemented yet.`);
+                    }}
+                    className="bg-[#14627a] text-white p-2 rounded-lg hover:bg-[#0f4a5b] transition-colors shadow-sm"
+                  >
                     <Plus className="w-5 h-5" />
                   </button>
                 </div>
@@ -237,7 +366,79 @@ export default function AdminDashboard() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {activeTab === 'overview' ? (
+                  {activeTab === 'settings' ? (
+                    <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm max-w-4xl mx-auto">
+                      <div className="mb-8 border-b border-gray-100 pb-6">
+                        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                          <ImageIcon className="w-6 h-6 text-[#14627a]" /> Hero Section Configuration
+                        </h3>
+                        <p className="text-gray-500 text-sm mt-1">Update the primary visuals seen by all visitors on the landing page.</p>
+                      </div>
+
+                      <div className="space-y-8">
+                        {[0, 1].map((index) => (
+                          <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Hero Image {index + 1} URL</label>
+                                <label className="cursor-pointer bg-[#14627a]/10 text-[#14627a] hover:bg-[#14627a]/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors">
+                                  {uploadingIndex === index ? (
+                                    <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-[#14627a]" />
+                                  ) : (
+                                    <Save className="w-3 h-3" />
+                                  )}
+                                  Upload from Machine
+                                  <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => handleFileUpload(index, e.target.files[0])}
+                                    disabled={uploadingIndex !== null}
+                                  />
+                                </label>
+                              </div>
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                  type="text"
+                                  value={(siteSettings?.heroImages?.[index]) || ''}
+                                  onChange={(e) => handleHeroImageChange(index, e.target.value)}
+                                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 outline-none text-sm"
+                                  placeholder="https://images.unsplash.com/..."
+                                />
+                              </div>
+                              <p className="text-[10px] text-gray-400 italic">Recommended size: 500x500 pixels (Square)</p>
+                            </div>
+                            <div className="relative group border-2 border-dashed border-gray-100 rounded-2xl overflow-hidden aspect-video bg-gray-50">
+                              {uploadingIndex === index ? (
+                                <div className="absolute inset-0 z-20 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#14627a]" />
+                                  <span className="text-xs font-bold text-[#14627a] animate-pulse">Uploading to Cloudinary...</span>
+                                </div>
+                              ) : null}
+                              {siteSettings?.heroImages?.[index] ? (
+                                <img src={siteSettings.heroImages[index]} alt={`Hero ${index + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                              ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                                  <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
+                                  <span className="text-xs font-medium">No preview available</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-12 flex justify-end pt-8 border-t border-gray-50">
+                        <button
+                          onClick={handleUpdateSettings}
+                          className="flex items-center gap-2 bg-[#14627a] text-white px-10 py-4 rounded-xl font-bold hover:bg-[#0f4a5b] transition-all shadow-lg hover:shadow-[#14627a]/25 transform active:scale-95"
+                        >
+                          <Save className="w-5 h-5" /> Save Platform Settings
+                        </button>
+                      </div>
+                    </div>
+                  ) : activeTab === 'overview' ? (
                     <div className="space-y-8">
                       {/* Stats Grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -296,9 +497,10 @@ export default function AdminDashboard() {
                                 {activeTab === 'users' ? 'User' : 'Title'}
                               </th>
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                {activeTab === 'users' ? 'Role' : 'Author/Instructor'}
+                                {activeTab === 'users' ? 'Role' : 'Category / Author'}
                               </th>
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                              {activeTab === 'courses' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Featured</th>}
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                           </thead>
@@ -315,12 +517,18 @@ export default function AdminDashboard() {
                                         {activeTab === 'users' ? `${item.firstName} ${item.lastName}` : (item.title || item.name)}
                                       </p>
                                       {activeTab === 'users' && <p className="text-xs text-gray-500">{item.email}</p>}
+                                      {activeTab === 'categories' && <p className="text-xs text-gray-500">slug: {item.slug}</p>}
                                     </div>
                                   </div>
                                 </td>
                                 <td className="px-6 py-4">
                                   <span className="text-sm font-medium text-gray-600 capitalize">
-                                    {activeTab === 'users' ? (item.role || 'User') : (item.author?.firstName || item.instructor?.firstName || 'System')}
+                                    {activeTab === 'users' ? (item.role || 'User') : (
+                                      <div className="flex flex-col">
+                                        <span className="text-gray-900 font-medium">{(activeTab === 'courses' ? item.category?.name : '') || ''}</span>
+                                        <span className="text-xs text-gray-500">{item.author?.firstName || item.instructor?.firstName || 'System'}</span>
+                                      </div>
+                                    )}
                                   </span>
                                 </td>
                                 <td className="px-6 py-4">
@@ -331,8 +539,28 @@ export default function AdminDashboard() {
                                     </span>
                                   </div>
                                 </td>
+                                {activeTab === 'courses' && (
+                                  <td className="px-6 py-4">
+                                    <button
+                                      onClick={() => handleToggleFeatured(item)}
+                                      className={`p-2 rounded-lg transition-colors ${item.isFeatured ? 'text-yellow-500 bg-yellow-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                                      title={item.isFeatured ? 'Remove from Home' : 'Feature on Home'}
+                                    >
+                                      <Star className={`w-5 h-5 ${item.isFeatured ? 'fill-current' : ''}`} />
+                                    </button>
+                                  </td>
+                                )}
                                 <td className="px-6 py-4">
                                   <div className="flex items-center justify-end gap-2">
+                                    {activeTab === 'events' && (
+                                      <button
+                                        onClick={() => handleViewParticipants(item)}
+                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                        title="View Participants"
+                                      >
+                                        <Users className="w-4 h-4" />
+                                      </button>
+                                    )}
                                     <button
                                       onClick={() => handleEditEntity(activeTab, item)}
                                       className="p-2 text-gray-400 hover:text-[#14627a] hover:bg-[#14627a]/10 rounded-lg transition-all"
@@ -372,6 +600,98 @@ export default function AdminDashboard() {
           </div>
         </main>
       </div>
+
+      {/* Participants Modal */}
+      <AnimatePresence>
+        {isParticipantsModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-[30px] p-8 max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-[#14627a]">Event Participants</h2>
+                  <p className="text-gray-500 text-sm">Registered users for: <span className="font-semibold text-gray-900">{selectedEvent?.title}</span></p>
+                </div>
+                <button
+                  onClick={() => setIsParticipantsModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <XCircle className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto min-h-[300px]">
+                {isParticipantsLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#14627a]" />
+                  </div>
+                ) : participants.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                    <Users className="w-12 h-12 mb-2 opacity-20" />
+                    <p>No participants registered yet.</p>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-100/50 border-b border-gray-100">
+                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
+                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Contact</th>
+                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Registered At</th>
+                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 bg-white">
+                        {participants.map((reg) => (
+                          <tr key={reg._id} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[#14627a]/10 flex items-center justify-center text-[#14627a] font-bold text-xs uppercase">
+                                  {reg.user?.firstName?.charAt(0) || 'U'}
+                                </div>
+                                <span className="text-sm font-bold text-gray-900">
+                                  {reg.user ? `${reg.user.firstName} ${reg.user.lastName}` : 'Deleted User'}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col">
+                                <span className="text-sm text-gray-900">{reg.user?.email}</span>
+                                <span className="text-xs text-gray-500">{reg.user?.phone || 'No phone'}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {new Date(reg.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="text-xs text-gray-500 italic max-w-xs truncate" title={reg.notes}>
+                                {reg.notes || 'No notes'}
+                              </p>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 flex justify-end">
+                <button
+                  onClick={() => setIsParticipantsModalOpen(false)}
+                  className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </div>

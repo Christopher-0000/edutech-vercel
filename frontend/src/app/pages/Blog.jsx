@@ -158,12 +158,7 @@ export default function Blog() {
               transition={{ delay: 0.35, duration: 0.6 }}
               className="mb-8 flex flex-wrap justify-center gap-4"
             >
-              <Link
-                to="/blog/dashboard"
-                className="inline-flex items-center gap-2 bg-white border-2 border-[#14627a] text-[#14627a] px-6 py-3 rounded-lg font-semibold hover:bg-slate-50 transition-all shadow-sm group"
-              >
-                <LayoutDashboard size={20} className="group-hover:rotate-12 transition-transform" /> Dashboard
-              </Link>
+
               <Link
                 to="/blog/editor"
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-[#14627a] to-[#0f4a5b] text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all group"
@@ -239,10 +234,10 @@ export default function Blog() {
             ))}
           </motion.div>
         </div>
-      </motion.section>
+      </motion.section >
 
       {/* posts */}
-      <section className="pb-12 sm:pb-16 lg:pb-20 px-4 sm:px-6 lg:px-8">
+      < section className="pb-12 sm:pb-16 lg:pb-20 px-4 sm:px-6 lg:px-8" >
         <motion.div
           className="max-w-7xl mx-auto"
           variants={containerVariants}
@@ -351,9 +346,9 @@ export default function Blog() {
           >
           </motion.div>
         </motion.div>
-      </section>
+      </section >
 
       <Footer />
-    </div>
+    </div >
   );
 }

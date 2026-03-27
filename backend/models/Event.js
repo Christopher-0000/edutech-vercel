@@ -31,4 +31,4 @@ eventSchema.methods.incrementRegistration = async function() {
   await this.save();
 };
 
-module.exports = mongoose.model('Event', eventSchema);
+module.exports = mongoose.model('Event', eventSchema, 'events');

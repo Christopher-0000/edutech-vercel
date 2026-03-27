@@ -34,9 +34,9 @@ export const eventService = {
     }
   },
 
-  registerForEvent: async (id) => {
+  registerForEvent: async (id, registrationData = {}) => {
     try {
-      const data = await api.post(`/events/${id}/register`, {});
+      const data = await api.post(`/events/${id}/register`, registrationData);
       return data.registration || data;
     } catch (error) {
       console.error('Error in eventService.registerForEvent:', error);

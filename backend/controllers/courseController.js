@@ -7,7 +7,7 @@ exports.getCourses = asyncHandler(async (req, res) => {
   if (search) query.$text = { $search: search };
   if (type) query.courseType = type;
   const skip = (page - 1) * limit;
-  const courses = await Course.find(query).skip(skip).limit(parseInt(limit));
+  const courses = await Course.find(query).populate('category', 'name slug').skip(skip).limit(parseInt(limit));
   const total = await Course.countDocuments(query);
   res.json({ success: true, courses, total, page: parseInt(page), pages: Math.ceil(total / limit) });
 });
@@ -44,6 +44,9 @@ exports.getMyCourses = asyncHandler(async (req, res) => {
 });
 
 exports.getFeaturedCourses = asyncHandler(async (req, res) => {
-  const courses = await Course.getFeatured();
+  const courses = await Course.find({ isFeatured: true, isActive: true })
+    .populate('category', 'name slug')
+    .sort({ createdAt: -1 })
+    .limit(8);
   res.json({ success: true, courses });
 });

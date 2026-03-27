@@ -51,7 +51,13 @@ courseSchema.methods.incrementEnrollment = async function () {
 };
 
 courseSchema.statics.getFeatured = function () {
-  return this.find({ isFeatured: true, isActive: true }).sort({ createdAt: -1 }).limit(6);
+  return this.find({
+    isFeatured: true,
+    isActive: true
+  })
+  .populate('category', 'name slug')
+  .sort({ createdAt: -1 })
+  .limit(8);
 };
 
-module.exports = mongoose.model('Course', courseSchema);
+module.exports = mongoose.model('Course', courseSchema, 'courses');
