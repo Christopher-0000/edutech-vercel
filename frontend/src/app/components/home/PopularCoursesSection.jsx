@@ -113,7 +113,6 @@ export default function PopularCoursesSection({ courses }) {
                   <CourseCard
                     course={course}
                     index={index}
-                    highlighted={index === page}
                   />
                 </div>
               ))}
